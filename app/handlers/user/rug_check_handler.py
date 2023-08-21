@@ -2,7 +2,6 @@ from aiogram import Router
 from aiogram.types import Message
 from aiogram.filters import Command
 from aiogram.utils.text_decorations import html_decoration as hd
-from aiogram.utils.markdown import hide_link
 
 
 import datetime
@@ -10,58 +9,47 @@ import logging
 from pprint import pprint
 
 from app.config import Config
-from app.tools.monarch_rugcheck import MonarchRugCheck
-from app.tools.coinmarketcup import CoinMarketCup
 from app.tools.honeypot import HoneyPot
+from app.keyboards.inline.rug_check_keyboard import get_link_keyboard
 
 router = Router()
 
 
 async def get_time_delta(given_timestamp):
-    # Get the current timestamp
+    """
+    Calculate the time difference between the given timestamp and the current time.
+
+    Args:
+        given_timestamp (float): The given timestamp.
+
+    Returns:
+        str: A string representing the time difference in days.
+    """
     current_timestamp = datetime.datetime.now().timestamp()
-
-    # Convert the given timestamp to a datetime object
     given_datetime = datetime.datetime.fromtimestamp(given_timestamp)
-
-    # Convert the current timestamp to a datetime object
     current_datetime = datetime.datetime.fromtimestamp(current_timestamp)
-    # Calculate the time difference
     time_delta = current_datetime - given_datetime
     days = time_delta.days % 30
     return f"{days} Days"
 
 
-async def message_template(data: dict):
-    message = f"""
-    @BSCSafeSniper  |  {data['token']['name']}  |  🔸{data['network']} Report \n
-     🔸 Address: {data['token']['address']} \n 
-     👨‍💻 Owner:  {data['token']['creator']} \n
-     💧 Liquid: {int(float(data['token']['liq']))}.\n
-     👥 Holders:     {data['holders']}\n
-     💲 MCap: ${int(data['token']['supply']) * int(float(data['token']['price']))}  BNB:${round(data['token']['mainTokenPrice'])} \n
-     💰 Liquidity: {(int(float(data['token']['liq'])) * int(float(data['token']['price'])))/round(data['token']['mainTokenPrice'])} WBNB \n
-     🔒 LP Lock:      100.00% locked for {await get_time_delta(data['locks'][0]['end'])} on {data['locks'][0]['source']} \n
-     🔖 Fee:              Buy: 9.99%  |  Sell: 13.73%
-     📈 Max Buy:   99999999999999.98(0.0001 WBNB)
-     🥏 Telegram:  https://t.me/GodFatherBNB
-     🌐 WebSite:     www.godfatherbsc.site
-     📈 ATH:             TBD
+async def honey_pot_template(data: dict) -> str:
+    """
+    Create a formatted message based on HoneyPot data.
 
-     🔸BSC () 📈Chart () 💠Analyzer ()
-     ____________________________
-     Always DYOR. Auto rugcheckers can`t detect all scams.
-     THIS IS ONE MINUTE DELAYED REPORT.
-     JOIN VIP FOR REAL-TIME"""
+    Args:
+        data (dict): Data from HoneyPot analysis.
 
-
-async def honey_pot_tamplate(data: dict) -> str:
+    Returns:
+        str: A formatted message containing HoneyPot analysis details.
+    """
     if data["honeypotResult"]["isHoneypot"]:
         is_honeypot = "❗❗❗ <b><i>WARNING</i>: IS HONEYPOT</b> ❗❗❗"
     else:
         is_honeypot = "🎉🎉🎉 <b><i>SUCCESS</i>: IS NOT HONEYPOT</b> 🎉🎉🎉"
     message = (
-        f"🚨 <b>{data['token']['name'].upper()}</b> 🚨 | <b>{data['name_link']}</b>\n"
+        f"🚨 <b>{hd.code(data['token']['name'].upper())}</b> 🚨"
+        f"| <b>{data['name_link']}</b>\n"
         f"<b>Address</b>: {hd.code(data['token']['address'])}\n\n"
         f"{is_honeypot}\n\n"
         f"📊 <b><i>SIMULATION RESULTS</i></b> 📊\n"
@@ -87,13 +75,14 @@ async def honey_pot_tamplate(data: dict) -> str:
 
 @router.message(Command("address"))
 async def address_cmd_handler(message: Message, config: Config):
-    try:
-        print(message.text)
-        if message.text:
-            address = message.text.split(" ")[-1]
-            token_data = await HoneyPot().analize_token(address)
-            pprint(token_data)
-            msg = await honey_pot_tamplate(token_data)
-            await message.answer(msg, parse_mode="html")
-    except Exception as e:
-        logging.error(e)
+    # try:
+    if message.text:
+        address = message.text.split(" ")[-1]
+        token_data = await HoneyPot().analize_token(address)
+        msg = await honey_pot_template(token_data)
+        keyboard = await get_link_keyboard(token_data)
+        await message.answer(msg, parse_mode="html", reply_markup=keyboard)
+
+
+# except Exception as e:
+#    logging.error(e)

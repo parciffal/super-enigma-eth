@@ -1,9 +1,10 @@
 from aiogram import Router
 
 
-def admin_router() -> Router:
+def get_admin_menu_router() -> Router:
     from . import menu
 
     router = Router()
-    router.include_router(menu.get_admin_menu_router())
+    router.include_router(menu.router)
+
     return router
