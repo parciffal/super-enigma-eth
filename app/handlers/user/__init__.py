@@ -2,11 +2,8 @@ from aiogram import Router
 
 
 def get_user_router() -> Router:
-    from . import info, sample, start
+    from . import rug_check_handler
 
     router = Router()
-    router.include_router(info.router)
-    router.include_router(sample.router)
-    router.include_router(start.router)
-
+    router.include_router(rug_check_handler.router)
     return router

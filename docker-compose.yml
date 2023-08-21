@@ -1,0 +1,28 @@
+version: "3.9"
+
+services:
+  web:
+    build: .
+    command: python ./manage.py
+    restart: always
+    volumes:
+      - .:/src
+    ports:
+      - 8005:8005
+    depends_on:
+      - db
+    env_file:
+      - .env
+  
+  db:
+    image: postgres:13
+    restart: always
+    ports:
+      - "15432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/ 
+
+
+
+volumes:
+  postgres_data:

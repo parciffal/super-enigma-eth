@@ -3,6 +3,7 @@ import os
 from dataclasses import MISSING, dataclass, fields
 
 import toml
+from pprint import pprint
 
 
 @dataclass
@@ -19,11 +20,12 @@ class ConfigDatabase:
     password: str = None
     host: str = None
     port: str = None
+    database_name: str = None
 
     def get_db_url(self):
         if self.protocol == "sqlite":
             return f"{self.protocol}://{self.file_name}"
-        return f"{self.protocol}://{self.user}:{self.password}@{self.host}:{self.port}"
+        return f"{self.protocol}://{self.user}:{self.password}@{self.host}:{int(self.port)}/{self.database_name}"
 
     def get_tortoise_config(self):
         return {
@@ -41,13 +43,6 @@ class ConfigDatabase:
 class ConfigStorage:
     use_persistent_storage: bool
     redis_url: str = None
-
-
-@dataclass
-class ConfigWebhook:
-    port: int
-    path: str = "/webhook"
-    url: str = None
 
 
 @dataclass
@@ -71,13 +66,19 @@ class ConfigApi:
 
 
 @dataclass
+class ConfigScanApis:
+    bscscan = ""
+    ethscan = ""
+
+
+@dataclass
 class Config:
     bot: ConfigBot
     database: ConfigDatabase
     storage: ConfigStorage
-    webhook: ConfigWebhook
     settings: ConfigSettings
     api: ConfigApi
+    scanapis: ConfigScanApis
 
     @classmethod
     def parse(cls, data: dict) -> "Config":
@@ -96,7 +97,6 @@ class Config:
                     raise ValueError(
                         f"Missing field {field.name} in section {section.name}"
                     )
-
             sections[section.name] = section.type(**pre)
 
         return cls(**sections)
@@ -111,5 +111,4 @@ def parse_config(config_file: str) -> Config:
 
     with open(config_file, "r") as f:
         data = toml.load(f)
-
     return Config.parse(dict(data))

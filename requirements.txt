@@ -10,3 +10,5 @@ redis
 tgcrypto
 toml
 tortoise-orm
+asyncpg
+watchdog
