@@ -1,7 +1,7 @@
-aerich
 aiogram-dialog==2.0.0b11
 aiogram==3.0.0b5
 aiohttp
+aiofiles
 aiosqlite
 cachetools
 coloredlogs
@@ -10,5 +10,6 @@ redis
 tgcrypto
 toml
 tortoise-orm
+aerich
 asyncpg
 watchdog

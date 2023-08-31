@@ -1,13 +1,18 @@
 from aiogram.filters.callback_data import CallbackData
 
-from enum import StrEnum
+from enum import Enum
 
 
-class AdminMenuActions(StrEnum):
+#
+class AdminMenuActions(str, Enum):
     GROUPS = "👥 Goups"
     ADMINS = "👮 Admins"
     ADS = "📰 Ads"
+    BACK = "back"
+    CLOSE = "❌ Close"
+    ADD_ADS = "add_ads"
 
 
+#
 class AdminMenuCB(CallbackData, prefix="admin_menu"):
-    action: AdminMenuActions
+    action: str

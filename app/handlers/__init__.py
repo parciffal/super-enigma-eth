@@ -8,7 +8,7 @@ def get_handlers_router() -> Router:
     router = Router()
     user_router = get_user_router()
     admin_router = admin_router()
-    router.include_router(user_router)
     router.include_router(admin_router)
+    router.include_router(user_router)
 
     return router

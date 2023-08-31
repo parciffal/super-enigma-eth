@@ -16,3 +16,37 @@ async def honey_pot_url(key, address, chainID=56):
         "get_pairs": f"https://api.honeypot.is/v1/GetPairs?address={address}",
     }
     return API_URLS[key]
+
+
+async def coinmarketcap(key, address):
+    API_URLS = {
+        "get_coinmarket_base_info": f"https://api.coinmarketcap.com/dexer/v3/dexer/search/main-site?keyword={address}&all=false",
+        "get_gecko_base_info": f"https://app.geckoterminal.com/api/p1/search?query={address}",
+    }
+    return API_URLS[key]
+
+
+async def geckoterminal(key, chain, address):
+    API_URLS = {
+        "get_full_info": f"https://app.geckoterminal.com/api/p1/{chain}/pools/{address}"
+    }
+    return API_URLS[key]
+
+
+async def gopluslabs(key, address, chainID):
+    API_URLS = {
+        "get_address_info": f"https://api.gopluslabs.io/api/v1/token_security/{chainID}?contract_addresses={address}"
+    }
+    return API_URLS[key]
+
+
+async def coinbrain(key, address):
+    API_URLS = {
+        "get_coinbrain_base_info": f"https://api.coinbrain.com/cointoaster/coins?size=100"
+    }
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "searchPhrase": address,
+        "chainIds": [1, 56, 137, 42161, 43114, 10, 250, 42220, 1313161554],
+    }
+    return API_URLS[key], headers, data

@@ -1,6 +1,8 @@
 import aiohttp
 import json
+from pprint import pprint
 
+from app.db.models import GroupModel
 from .api_urls import get_api_url, honey_pot_url
 
 
@@ -24,13 +26,17 @@ class HoneyPot:
     async def get_button_links(self, data: dict, chain: str = "btc") -> dict:
         address = data["token"]["address"]
         if chain == "btc":
+            group = await GroupModel.filter(chain="btc").first()
             data["links"].append(
                 {"name": "🔸BSCScan", "url": f"https://bscscan.com/token/{address}"}
             )
         else:
+            group = await GroupModel.filter(chain="eth").first()
             data["links"].append(
                 {"name": "🔹ETHScan", "url": f"https://etherscan.io/token/{address}"}
             )
+        if group:
+            data["top_group_link"] = await group.to_link()
         data["links"].append(
             {
                 "name": "📈 Chart",
@@ -64,6 +70,7 @@ class HoneyPot:
             data["links"] = []
             chain = "eth"
         data = await self.get_button_links(data, chain)
+        pprint(data)
         return data
 
     #
@@ -71,7 +78,6 @@ class HoneyPot:
         self, address: str, pair: str = "", chainId: int = 56
     ) -> dict:
         url = await honey_pot_url("get_token_info", address, chainId)
-        print(url)
         return await self.aiohttp_get(url)
 
     #

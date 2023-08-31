@@ -17,6 +17,7 @@ from app.handlers import get_handlers_router
 from app.middlewares import register_middlewares
 from app.commands import remove_bot_commands, setup_bot_commands
 
+
 logging_config = {
     "version": 1,
     "formatters": {"standard": {"format": "%(asctime)s - %(levelname)s - %(message)s"}},
@@ -82,7 +83,6 @@ async def main():
         await db.create_models(tortoise_config)
     except FileExistsError:
         await db.migrate_models(tortoise_config)
-
     session = AiohttpSession(
         api=TelegramAPIServer.from_base(
             config.api.bot_api_url, is_local=config.api.is_local

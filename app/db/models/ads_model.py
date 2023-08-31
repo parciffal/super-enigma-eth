@@ -3,16 +3,13 @@ from tortoise import fields, models
 
 class AdsModel(models.Model):
     id = fields.IntField(pk=True)
+    name = fields.TextField(default="")
     description = fields.TextField(default="")
-    show = fields.BooleanField(default=True)
-    admin = fields.ForeignKeyField("models.AdminModel", on_delete=fields.CASCADE)
+    media = fields.TextField(default="")
+    show = fields.BooleanField(default=False)
 
     class Meta:
         fields = "__all__"
 
-    async def to_dict(self):
-        return {
-            "id": self.id,
-            "description": self.description,
-            "show": self.show,
-        }
+    async def ads_to_message(self):
+        return f"📊📈 <b>{self.name}: {self.description}</b>"
