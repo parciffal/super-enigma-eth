@@ -20,8 +20,8 @@ class GoPlusLabs:
     CHAINS = {
         "ethereum": "1",
         "eth": "1",
-        "shibarium": "1",
-        "Shibarium": "1",
+        "shibarium": "109",
+        "Shibarium": "109",
         "optimism": "10",
         "cronos": "25",
         "bsc": "56",
@@ -139,6 +139,13 @@ class GoPlusLabs:
         elif chain == "ethereum":
             data["links"].append(
                 {"name": "🔹ETHScan", "url": f"https://etherscan.io/token/{address}"}
+            )
+        elif chain == "shibarium":
+            data["links"].append(
+                {
+                    "name": "🔹ShibariumScan",
+                    "url": f"https://www.shibariumscan.io/address/{address}",
+                }
             )
         data["links"].append(
             {
@@ -287,27 +294,64 @@ class GoPlusLabs:
             creation_date = response["data"]["attributes"]["pool_created_at"]
             days = await self.calculate_age(creation_date)
             data["baseInfo"]["creation_date"] = days
+            data["fullInfo"] = response["data"]
             return data
         except:
             return data
+
+    async def get_shibarium_message(self, address, data, bot):
+        ads = await ads_manager.get_ads(bot)
+        bot_info = await bot.get_me()
+        message = (
+            f"@{bot_info.username} |"
+            f" 🚨 <b>{hd.code(data['baseInfo']['baseTokenSymbol'].upper())}</b> 🚨 |"
+            f" <code>{data['baseInfo']['platformName']} </code>\n\n"
+            f"<b>---------------📝Base Token Info</b>\n\n"
+            f"<b>🌐 Address: </b> {hd.code(address)}\n"
+            f"<b>🏦 Liquidity: {round(float(data['fullInfo']['attributes']['reserve_in_usd']),2)} $ </b>\n"
+                f"<b>💵 Price: {data['fullInfo']['attributes']['price_in_usd'][0: 10]} $ </b>\n"
+            f"<b>💰 MarketCap: {round(float(data['fullInfo']['attributes']['fully_diluted_valuation']))} $ </b>\n\n"
+            f"{ads}"
+        )
+        return message
+
+    async def get_shibarium_info(self, address, data, bot):
+        try:
+            url = await geckoterminal("get_shibarium_info", "", address)
+            response = await self.aiohttp_get(url)
+            if response["links"]["top_pool"]:
+                response = await self.aiohttp_get(response["links"]["top_pool"])
+            data["fullInfo"] = response["data"]
+            msg = await self.get_shibarium_message(address, data, bot)
+            data["links"] = []
+            keyboard = await self.get_button_links(data, "shibarium", address)
+            return msg, keyboard
+        except:
+            msg = "📈 <b>We apologize, but the requested token currently does not possess an available report.</b>"
+            keyboard = None
+            return msg, keyboard
 
     #
     async def get_token_security(self, address, bot):
         data = await self.get_gecko_base_info(address)
         if data["baseInfo"] is not None:
-            data = await self.get_token_security_info(data, address)
-            if data["data"] is not None:
-                chain = data["baseInfo"]["platformName"].lower()
-                data["links"] = []
-                data = await self.get_creation_time(data, address)
-                data = await self.get_button_links(data, chain, address)
-                keyboards = await get_link_keyboard(data)
-                msg = await self.get_message(data, bot, address)
-                return msg, keyboards
+            if data["baseInfo"]["identifier"] == "shibarium":
+                msg, keyboard = await self.get_shibarium_info(address, data, bot)
+                return msg, keyboard
             else:
-                msg = "📈 <b>We apologize, but the requested token currently does not possess an available analytic report.</b>"
-                keyboards = None
-                return msg, keyboards
+                data = await self.get_token_security_info(data, address)
+                if data["data"] is not None:
+                    chain = data["baseInfo"]["platformName"].lower()
+                    data["links"] = []
+                    data = await self.get_creation_time(data, address)
+                    data = await self.get_button_links(data, chain, address)
+                    keyboards = await get_link_keyboard(data)
+                    msg = await self.get_message(data, bot, address)
+                    return msg, keyboards
+                else:
+                    msg = "📈 <b>We apologize, but the requested token currently does not possess an available analytic report.</b>"
+                    keyboards = None
+                    return msg, keyboards
         else:
             msg = "📵  <b>Apologies, but the token you are inquiring about does not currently have adequate liquidity.  \nPlease try again later.</b>"
             keyboards = None
