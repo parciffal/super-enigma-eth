@@ -286,8 +286,7 @@ class GoPlusLabs:
 
     async def add_commas_to_float(self, number):
         # Format the number with commas
-        formatted_number = "{:,}".format(number) 
-        print(formatted_number)
+        formatted_number = "{:,}".format(number)
         return formatted_number
 
     #
