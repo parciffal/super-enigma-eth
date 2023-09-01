@@ -1,6 +1,7 @@
 import aiohttp
 import json
 import time
+import locale
 from pprint import pprint
 import logging
 from datetime import datetime
@@ -51,6 +52,8 @@ class GoPlusLabs:
 
     def __init__(self):
         self.session = aiohttp.ClientSession()
+        # Set the locale to the user's default locale
+        self.locale = locale.setlocale(locale.LC_ALL, "")
 
     async def aiohttp_get(self, url) -> dict:
         start = time.time()
@@ -281,6 +284,12 @@ class GoPlusLabs:
         )
         return message
 
+    async def add_commas_to_float(self, number):
+        # Format the number with commas
+        formatted_number = "{:,}".format(number) 
+        print(formatted_number)
+        return formatted_number
+
     #
     async def get_creation_time(self, data, address):
         try:
@@ -288,7 +297,6 @@ class GoPlusLabs:
                 "get_full_info", data["baseInfo"]["identifier"], address
             )
             response = await self.aiohttp_get(url)
-            print(response)
             if response["links"]["top_pool"]:
                 response = await self.aiohttp_get(response["links"]["top_pool"])
             creation_date = response["data"]["attributes"]["pool_created_at"]
@@ -302,15 +310,29 @@ class GoPlusLabs:
     async def get_shibarium_message(self, address, data, bot):
         ads = await ads_manager.get_ads(bot)
         bot_info = await bot.get_me()
+        creation_date = data["fullInfo"]["attributes"]["pool_created_at"]
+        if creation_date:
+            try:
+                days = await self.calculate_age(creation_date)
+                age = f"<b>⌛️ Age: {days} Days</b>\n"
+            except:
+                age = ""
+        liquidity = await self.add_commas_to_float(
+            round(float(data["fullInfo"]["attributes"]["reserve_in_usd"]), 2)
+        )
+        marketcap = await self.add_commas_to_float(
+            round(float(data["fullInfo"]["attributes"]["fully_diluted_valuation"]))
+        )
         message = (
             f"@{bot_info.username} |"
             f" 🚨 <b>{hd.code(data['baseInfo']['baseTokenSymbol'].upper())}</b> 🚨 |"
             f" <code>{data['baseInfo']['platformName']} </code>\n\n"
             f"<b>---------------📝Base Token Info</b>\n\n"
             f"<b>🌐 Address: </b> {hd.code(address)}\n"
-            f"<b>🏦 Liquidity: {round(float(data['fullInfo']['attributes']['reserve_in_usd']),2)} $ </b>\n"
-                f"<b>💵 Price: {data['fullInfo']['attributes']['price_in_usd'][0: 10]} $ </b>\n"
-            f"<b>💰 MarketCap: {round(float(data['fullInfo']['attributes']['fully_diluted_valuation']))} $ </b>\n\n"
+            f"<b>🏦 Liquidity: {liquidity} $ </b>\n"
+            f"<b>💵 Price: {data['fullInfo']['attributes']['price_in_usd'][0: 10]} $ </b>\n"
+            f"<b>💰 MarketCap: {marketcap} $ </b>\n"
+            f"{age}\n\n"
             f"{ads}"
         )
         return message
