@@ -6,7 +6,8 @@ import logging
 
 
 from app.config import Config
-from app.tools.gopluslabs import gopluslabs_manager
+from app.tools.token_analitic import gopluslabs_manager
+from app.tools.token_analitic.gopluslabs import get_link_keyboard
 
 router = Router()
 
@@ -23,7 +24,8 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                 if keyboard is None:
                     await message.answer(msg, parse_mode="html")
                 else:
-                    await message.answer(msg, parse_mode="html", reply_markup=keyboard)
+                    keyb = await get_link_keyboard(keyboard)
+                    await message.answer(msg, parse_mode="html", reply_markup=keyb)
             if message.text.startswith("0") and (
                 len(message.text) < 42 or len(message.text) > 42
             ):

@@ -28,7 +28,7 @@ async def coinmarketcap(key, address):
 
 async def geckoterminal(key, chain, address):
     API_URLS = {
-        "get_full_info": f"https://app.geckoterminal.com/api/p1/{chain}/pools/{address}",
+        "get_full_info": f"https://app.geckoterminal.com/api/p1/{chain}/pools/{address}?include=dex%2Cdex.network.explorers%2Cnetwork_link_services%2Ctoken_link_services%2Cdex_link_services%2Cpairs&base_token=0",
         "get_shibarium_info": f"https://app.geckoterminal.com/api/p1/shibarium/pools/{address}?include=dex%2Cdex.network.explorers%2Cnetwork_link_services%2Ctoken_link_services%2Cdex_link_services%2Cpairs&base_token=0",
     }
     return API_URLS[key]
@@ -36,7 +36,8 @@ async def geckoterminal(key, chain, address):
 
 async def gopluslabs(key, address, chainID):
     API_URLS = {
-        "get_address_info": f"https://api.gopluslabs.io/api/v1/token_security/{chainID}?contract_addresses={address}"
+        "get_address_info": f"https://api.gopluslabs.io/api/v1/token_security/{chainID}?contract_addresses={address}",
+        "get_links": f"https://open-api.gopluslabs.io/api/v1/browser_scan/{chainID}"
     }
     return API_URLS[key]
 

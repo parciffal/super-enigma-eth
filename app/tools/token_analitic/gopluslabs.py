@@ -1,0 +1,368 @@
+from aiogram import Bot
+from aiogram.types import Message
+from aiogram.utils.markdown import link
+import aiohttp
+import json
+import time
+import locale
+from pprint import pprint
+import logging
+from datetime import datetime
+
+from aiogram.utils.text_decorations import html_decoration as hd
+
+from app.db.models import GroupModel
+from app.tools.token_analitic.api_urls import gopluslabs, coinmarketcap, geckoterminal
+from app.tools.token_analitic.tools import LINKS
+from app.tools.advertize_manager import ads_manager
+from app.keyboards.inline.rug_check_keyboard import get_link_keyboard
+
+
+async def base_info_tamplate() -> dict:
+    return {
+        "base": {
+            "platformId": "",
+            "platformName": "",
+            "baseTokenSymbol": "",
+            "quoteTokenSymbol": "",
+            "liquidity": "",
+            "pairContractAddress": "",
+            "platFormCryptoId": "",
+            "exchangeId": "",
+            "poolId": "",
+            "baseTokenName": "",
+            "identifier": "",
+            "creation_date": "",
+        }
+    }
+
+
+async def shorten_number(number):
+    if number >= 1_000_000_000_000:  # Trillions
+        return f"{number / 1_000_000_000_000:.2f} <b>TR</b>"
+    elif number >= 1_000_000_000:  # Billions
+        return f"{number / 1_000_000_000:.2f} <b>B</b>"
+    elif number >= 1_000_000:
+        return f"{number/ 1_000_000:.2f} <b>M</b>"
+    else:
+        return str(number)
+
+
+async def add_commas_to_float(number):
+    # Format the number with commas
+    formatted_number = "{:,}".format(number)
+    return formatted_number
+
+
+class GoPlusLabs:
+    ETH = 1
+    BTC = 56
+    NULLADR = "0x0000000000000000000000000000000000000000"
+    CHAINS = {
+        "ethereum": "1",
+        "eth": "1",
+        "shibarium": "109",
+        "Shibarium": "109",
+        "optimism": "10",
+        "cronos": "25",
+        "bsc": "56",
+        "bnb chain": "56",
+        "okc": "66",
+        "gnosis": "100",
+        "heco": "128",
+        "polygon": "137",
+        "fantom": "250",
+        "kcc": "321",
+        "zksync era": "324",
+        "zksync": "324",
+        "ethw": "10001",
+        "fon": "201022",
+        "arbitrum": "42161",
+        "avalanche": "43114",
+        "linea mainet": "59144",
+        "linea testnet": "59140",
+        "base": "8453",
+        "harmony": "1666600000",
+        "tron": "tron",
+    }
+    BOOL = {"1": False, "0": True}
+    CH_BOOL = {"1": True, "0": False}
+    MSG_BOOL = {"0": "✅", "1": "🚫"}
+    CHECK_BOOL = {"1": "✅", "0": "🚫"}
+
+    def __init__(self):
+        self.session = aiohttp.ClientSession()
+        # Set the locale to the user's default locale
+        self.locale = locale.setlocale(locale.LC_ALL, "")
+
+    async def aiohttp_get(self, url) -> dict:
+        start = time.time()
+        async with self.session.get(url) as response:
+            data = await response.text()
+        parsed_data = json.loads(data)
+        print(time.time() - start)
+        return parsed_data
+
+    async def get_token_base_info(self, address) -> dict:
+        url = await coinmarketcap("get_coinmarket_base_info", address)
+        data = await self.aiohttp_get(url)
+        if data["status"]["error_code"] in [0, "0"]:
+            data["base"] = data["data"]["pairs"][0]
+            return data
+        else:
+            return {"base": None}
+
+    async def get_gecko_base_info(self, address) -> dict:
+        url = await coinmarketcap("get_gecko_base_info", address)
+        data = await self.aiohttp_get(url)
+        template = await base_info_tamplate()
+        if data["data"]["attributes"]["pools"][0]:
+            try:
+                kl = data["data"]["attributes"]["pools"][0]
+                template["base"]["platformId"] = self.CHAINS[
+                    kl["network"]["identifier"]
+                ]
+                template["base"]["platformName"] = kl["network"]["name"]
+                template["base"]["baseTokenName"] = kl["tokens"][0]["name"]
+                template["base"]["baseTokenSymbol"] = kl["tokens"][0]["symbol"]
+                template["base"]["identifier"] = kl["network"]["identifier"]
+                return template
+            except:
+                data = await self.get_token_base_info(address)
+                return data
+        else:
+            return await self.get_token_base_info(address)
+
+    async def get_token_security_info(self, data: dict, address) -> dict:
+        url = await gopluslabs(
+            "get_address_info",
+            address,
+            self.CHAINS[data["base"]["platformName"].lower()],
+        )
+        data_s = await self.aiohttp_get(url)
+        if data_s["result"][address.lower()]:
+            data["data"] = data_s["result"][address.lower()]
+        else:
+            data["data"] = None
+        return data
+
+    #
+    async def check_get_message_analytic(self, data) -> int:
+        count = 0
+        if (
+            self.BOOL[data["data"]["is_honeypot"]]
+            if data["data"].get("is_honeypot")
+            else None
+        ):
+            count += 1
+        if (
+            self.BOOL[data["data"]["is_mintable"]]
+            if data["data"].get("is_mintable")
+            else None
+        ):
+            count += 1
+        if (
+            self.BOOL[data["data"]["is_proxy"]]
+            if data["data"].get("is_proxy")
+            else None
+        ):
+            count += 1
+        if (
+            self.BOOL[data["data"]["is_blacklisted"]]
+            if data["data"].get("is_blacklisted")
+            else None
+        ):
+            count += 1
+        if (
+            self.CH_BOOL[data["data"]["is_in_dex"]]
+            if data["data"].get("is_in_dex")
+            else None
+        ):
+            count += 1
+        if (
+            self.CH_BOOL[data["data"]["is_open_source"]]
+            if data["data"].get("is_open_source")
+            else None
+        ):
+            count += 1
+
+        return count
+
+    async def get_message_analytic(self, data):
+        try:
+            count = await self.check_get_message_analytic(data)
+            return (
+                f"<b>🛡️Safety Test's</b>\n\n"
+                f"<b>🍯Honeypot: </b> {self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get('is_honeypot') else self.MSG_BOOL['1']}    "
+                f"<b>🖨️Mintable: </b> {self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get('is_mintable') else self.MSG_BOOL['1']}\n"
+                f"<b>🔄Proxy: </b> {self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get('is_proxy') else self.MSG_BOOL['1']}           "
+                f"<b>🚫Blacklisted: </b> {self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get('is_blacklisted') else self.MSG_BOOL['1']}\n"
+                f"<b>📈In Dex: </b> {self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get('is_in_dex') else self.MSG_BOOL['1']}          "
+                f"<b>🌐Open Source: </b> {self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get('is_open_source') else self.MSG_BOOL['1']}\n\n"
+                f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
+            )
+        except:
+            return ""
+
+    async def calculate_age(self, data):
+        try:
+            current_time = datetime.utcnow()
+            creation_time = datetime.strptime(data['full']["attributes"]["pool_created_at"],
+                                              "%Y-%m-%dT%H:%M:%S.%fZ")
+            days = (current_time - creation_time).days
+            if days:
+                return f"<b>Contract Age:</b> Created {days} days ago\n"
+            else:
+                return ""
+        except:
+            return ""
+
+    async def calculate_days_left(self, locked_detail):
+        try:
+            if not locked_detail:
+                return None
+            end_time_str = locked_detail[0]["end_time"]
+            end_time = datetime.strptime(
+                end_time_str, "%Y-%m-%dT%H:%M:%S+00:00")
+            current_time = datetime.utcnow()
+            days_left = (end_time - current_time).days
+            return days_left
+        except:
+            return None
+
+    async def get_lp_locked(self, data):
+        try:
+            for i in data["data"]["holders"]:
+                if i["is_locked"] == 1:
+                    try:
+                        days = await self.calculate_days_left(i["locked_detail"])
+                        if days > 0:
+                            return f"<b>🔐LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  for <b>{days} Days</b> \n"
+                        else:
+                            return f"<b>🔐LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  <b>Expired for {-1*days} Days</b> \n"
+                    except:
+                        return f"<b>🔐LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>\n"
+        except:
+            return ""
+
+    async def get_top_holders(self, data):
+        links = LINKS[self.CHAINS[data["base"]["platformName"].lower()]]
+        if links.get('browserScanAddress') != "":
+            url = links.get('browserScanAddress')
+        else:
+            url = None
+        if data.get('data'):
+            if data['data']['holders']:
+                msg = "<b>Top Holders: </b>"
+                for holder in data['data']['holders']:
+                    if url is not None:
+                        percent = str(round(float(holder['percent'])*100))+"%"
+                        txt = hd.link(percent, url+holder['address'])
+                    else:
+                        txt = str(round(float(holder['percent'])*100))+"%"
+                    msg += f"{txt} |"
+                return msg
+        return ""
+
+    async def get_pair(self, data):
+        for include in data['included']:
+            if include['type'] == 'pair':
+                links = LINKS[self.CHAINS[data["base"]
+                                          ["platformName"].lower()]]
+                if links.get('browserScan') != "":
+                    url = links.get('browserScanAddress')
+                else:
+                    url = None
+                pair = hd.link("View on Scan", url +
+                               include['attributes']['quote_address'])
+                return f"<b>Pair: </b> {pair} \n"
+        return ""
+
+    async def get_message(self, data, bot, address) -> str:
+        ads = await ads_manager.get_ads(bot)
+        test = await self.get_message_analytic(data)
+        age = await self.calculate_age(data)
+        top_holders = await self.get_top_holders(data)
+        pair = await self.get_pair(data)
+        bot_info = await bot.get_me()
+        liquidity = await add_commas_to_float(
+            round(float(data["full"]["attributes"]["reserve_in_usd"]), 2)
+        )
+        marketcap = await add_commas_to_float(
+            round(float(data["full"]["attributes"]["fully_diluted_valuation"]))
+        )
+        lp_locked = await self.get_lp_locked(data)
+        message = (
+            f"@{bot_info.username} | "
+            f"your 🔎 QUICKI RESULTS 🔍 for <b>{hd.code(data['full']['attributes']['name'].upper())}</b> Token!\n"
+            f"<b>Name: </b> {hd.code(data['full']['attributes']['name'])}\n"
+            f"<b>CA: </b> {hd.code(address)}\n\n"
+            f"{test}"
+            f"<b>Chain: </b> {data['base']['platformName']}\n"
+            f"<b>Buy Tax: </b> {round(float(data['data']['buy_tax'])*100, 2) if data.get('data') else None}%\n"
+            f"<b>Sell Tax: </b> {round(float(data['data']['sell_tax'])*100, 2) if data.get('data') else None}%\n"
+            f"<b>Creator: </b> {data['data']['creator_address'] if data.get('data') else None}\n"
+            f"<b>Owner: </b> {data['data']['owner_address'] if data.get('data') else None}\n"
+            f"{age}"
+            f"{top_holders}\n\n"
+            f"<b>💲 Market Data 💲</b>\n"
+            f"<b>Pairing:</b> {data['full']['attributes']['name']}\n"
+            f"{pair}"
+            f"<b>Liquidity:</b> {liquidity} $\n"
+            f"<b>Market Cap:</b> {marketcap} $\n"
+            f"{lp_locked}"
+            f"{age}"
+            f"\n{ads}"
+        )
+        return message
+
+    #
+    async def get_gecko_full_info(self, address, data):
+        url = await geckoterminal("get_full_info", data["base"]["identifier"], address)
+        response = await self.aiohttp_get(url)
+        if response.get("links"):
+            response = await self.aiohttp_get(response["links"]["top_pool"])
+        if response.get("data"):
+            data["full"] = response["data"]
+        if response.get("included"):
+            data['included'] = response['included']
+        else:
+            data['included'] = {}
+        return data
+
+    async def get_button_links(self, data: dict, address: str) -> dict:
+        keyboards = []
+        links = LINKS[self.CHAINS[data["base"]["platformName"].lower()]]
+        for key in links:
+            url = f"{links[key]}{address}"
+            name = key
+            if key == "geckoterminal":
+                name = "Gecko"
+            if key == "dextools":
+                name = "Dex"
+            if key == "browserScanAddress":
+                name = "Scan"
+            keyboards.append(
+                {
+                    "name": name,
+                    "url": url
+                }
+            )
+        return keyboards
+
+    async def get_token_security(self, address: str, bot: Bot):
+        data = await self.get_gecko_base_info(address)
+        if data['base'] is not None:
+            data = await self.get_gecko_full_info(address, data)
+            if data["base"]["identifier"] != "shibarium":
+                data = await self.get_token_security_info(data, address)
+            keyboards = await self.get_button_links(data, address)
+            msg = await self.get_message(data, bot, address)
+            return msg, keyboards
+        else:
+            msg = "📵  <b>Apologies, but the token you are inquiring about does not currently have adequate liquidity.  \nPlease try again later.</b>"
+            keyboards = None
+            return msg, keyboards
+
+
+gopluslabs_manager = GoPlusLabs()
