@@ -10,6 +10,7 @@ import logging
 from datetime import datetime
 
 from aiogram.utils.text_decorations import html_decoration as hd
+from tortoise.fields import relational
 
 from app.db.models import GroupModel
 from app.tools.token_analitic.api_urls import gopluslabs, coinmarketcap, geckoterminal
@@ -202,7 +203,7 @@ class GoPlusLabs:
                 f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
             )
         except:
-            return ""
+            return "🍯 Test: DOES NOT SEEM LIKE HONEYPOT\n\n"
 
     async def calculate_age(self, data):
         try:
@@ -261,7 +262,7 @@ class GoPlusLabs:
                     else:
                         txt = str(round(float(holder['percent'])*100))+"%"
                     msg += f"{txt} |"
-                return msg
+                return msg+"\n"
         return ""
 
     async def get_pair(self, data):
@@ -295,14 +296,14 @@ class GoPlusLabs:
     async def get_creator(self, data):
         try:
             creator = data['data']['creator_address']
-            return f"<b>Creator:</b> {creator}\n"
+            return f"<b>Creator:</b> {hd.code(creator)}\n"
         except:
             return ""
 
     async def get_owner(self, data):
         try:
             owner = data['data']['owner_address']
-            return f"<b>Owner: </b> {owner}"
+            return f"<b>Owner: </b> {hd.code(owner)}\n"
         except:
             return ""
 
@@ -333,7 +334,41 @@ class GoPlusLabs:
 
     async def get_chain(self, data):
         try:
-            return f"<b>Pairing:</b> {data['full']['attributes']['name']}\n"
+            return f"<b>Chain:</b> {data['base']['identifier']}\n\n"
+        except:
+            return ""
+
+    async def get_dex_data(self, address):
+        try:
+            data = await self.aiohttp_get(f"https://api.dexscreener.com/latest/dex/search?q={address}")
+            return data['pairs'][0]
+        except:
+            return None
+
+    async def calc_created(self, data):
+        try:
+            current_time = datetime.utcnow()
+            creation_timestamp_ms = int(data['pairCreatedAt'])
+            creation_time = datetime.utcfromtimestamp(
+                creation_timestamp_ms / 1000.0)
+            days = (current_time - creation_time).days
+            if days:
+                return f"<b>Pair Created</b>: {days} Days ago\n"
+            else:
+                return ""
+        except:
+            return ""
+
+    async def get_dex_pair(self, data, address):
+        try:
+            links = LINKS[self.CHAINS[data["base"]
+                                      ["platformName"].lower()]]
+            if links.get('browserScan') != "":
+                url = links.get('browserScanAddress')
+            else:
+                url = None
+            pair = hd.link("View on Scan", url + address)
+            return f"<b>Pair: </b> {pair} \n"
         except:
             return ""
 
@@ -353,26 +388,73 @@ class GoPlusLabs:
         owner = await self.get_owner(data)
         pairing = await self.get_pairing(data)
         chain = await self.get_chain(data)
+        dex_data = await self.get_dex_data(address)
+
+        if pair == "":
+            try:
+                pair = await self.get_dex_pair(data, dex_data['quoteToken']['address'])
+            except:
+                pass
+
+        try:
+            name = dex_data['baseToken']['name']
+        except:
+            name = data['full']['attributes']['name']
+
+        try:
+            liquidity = f"<b>Liquidity:</b> {dex_data['liquidity']['usd']} $\n"
+        except:
+            pass
+        try:
+            liquidity_base = f"<b>Pooled {name}:</b> {await add_commas_to_float(dex_data['liquidity']['base'])}\n"
+        except:
+            liquidity_base = ""
+        try:
+            pair_created_at = await self.calc_created(dex_data)
+        except:
+            pair_created_at = age
+
+        try:
+            price = f"<b>Price:</b> {dex_data['priceUsd']} $\n"
+        except:
+            price = ""
+
+        try:
+            price_change = f"<b>24H Price Change: </b> {dex_data['priceChange']['h24']}%\n"
+        except:
+            price_change = ""
+
+        try:
+            txns = f"<b>24H Txns:</b>"
+            txns += f"\n      <b>Buy:</b> {dex_data['txns']['h24']['buys']} "
+            txns += f"| <b>Sell:</b> {dex_data['txns']['h24']['sells']}\n"
+        except:
+            txns = ""
+
         message = (
             f"@{bot_info.username} | "
-            f"your 🔎 QUICKI RESULTS 🔍 for <b>{hd.code(data['full']['attributes']['name'].upper())}</b> Token!\n"
-            f"<b>Name: </b> {hd.code(data['full']['attributes']['name'])}\n"
-            f"<b>CA: </b> {hd.code(address)}\n\n"
-            f"{test}"
+            f"your 🔎 0XS RESULTS 🔍 for <b>{hd.code(name.upper())}</b> Token!\n"
+            f"<b>Name: </b> {hd.code(name)}\n"
+            f"<b>CA: </b> {hd.code(address)}\n"
             f"{chain}"
+            f"{test}"
             f"{buy_tax}"
             f"{sell_tax}"
             f"{creator}"
             f"{owner}"
             f"{age}"
-            f"{top_holders}\n\n"
-            f"<b>💲 Market Data 💲</b>\n"
+            f"{top_holders}"
+            f"\n<b>💲 Market Data 💲</b>\n"
             f"{pairing}"
             f"{pair}"
             f"{liquidity}"
+            f"{liquidity_base}"
             f"{marketcap}"
+            f"{price}"
+            f"{price_change}"
+            f"{txns}"
             f"{lp_locked}"
-            f"{age}"
+            f"{pair_created_at}"
             f"\n{ads}"
         )
         return message

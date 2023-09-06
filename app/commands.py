@@ -3,7 +3,8 @@ from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefaul
 
 from app.config import Config
 
-users_commands = {"start": "Get info about bot"}
+users_commands = {"start": "Get info about bot",
+                  "help": "Get keyboard info "}
 
 # owner_commands = {**users_commands, "ping": "Check bot ping", "stats": "Show bot stats"}
 

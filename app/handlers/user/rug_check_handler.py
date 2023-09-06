@@ -26,12 +26,14 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                 else:
                     keyb = await get_link_keyboard(keyboard)
                     await message.answer(msg, parse_mode="html", reply_markup=keyb)
-            if message.text.startswith("0") and (
+            elif message.text.startswith("0") and (
                 len(message.text) < 42 or len(message.text) > 42
             ):
                 await message.answer(
                     "📵 <b> We're sorry, but the token you provided appears to be invalid.</b>"
                 )
+            else:
+                pass
     except Exception as e:
         await message.answer(
             "📵 <b> We're sorry, but the token you provided appears to be invalid or error appeared.\n Please try again later. </b>"
