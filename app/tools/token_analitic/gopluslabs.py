@@ -278,6 +278,65 @@ class GoPlusLabs:
                 return f"<b>Pair: </b> {pair} \n"
         return ""
 
+    async def get_buy_tax(self, data):
+        try:
+            buy_tax = round(float(data['data']['buy_tax'])*100, 2)
+            return f"<b>Buy Tax: </b> {buy_tax}%\n"
+        except:
+            return ""
+
+    async def get_sell_tax(self, data):
+        try:
+            sell_tax = round(float(data['data']['sell_tax'])*100, 2)
+            return f"<b>Sell Tax: </b> {sell_tax}%\n"
+        except:
+            return ""
+
+    async def get_creator(self, data):
+        try:
+            creator = data['data']['creator_address']
+            return f"<b>Creator:</b> {creator}\n"
+        except:
+            return ""
+
+    async def get_owner(self, data):
+        try:
+            owner = data['data']['owner_address']
+            return f"<b>Owner: </b> {owner}"
+        except:
+            return ""
+
+    async def get_liquidity(self, data):
+        try:
+            liquidity = await add_commas_to_float(
+                round(float(data["full"]["attributes"]["reserve_in_usd"]), 2)
+            )
+            return f"<b>Liquidity:</b> {liquidity} $\n"
+        except:
+            return ""
+
+    async def get_marketcap(self, data):
+        try:
+            marketcup = await add_commas_to_float(
+                round(float(data["full"]["attributes"]
+                      ["fully_diluted_valuation"]))
+            )
+            return f"<b>Market Cap:</b> {marketcup} $\n"
+        except:
+            return ""
+
+    async def get_pairing(self, data):
+        try:
+            return f"<b>Pairing:</b> {data['full']['attributes']['name']}\n"
+        except:
+            return ""
+
+    async def get_chain(self, data):
+        try:
+            return f"<b>Pairing:</b> {data['full']['attributes']['name']}\n"
+        except:
+            return ""
+
     async def get_message(self, data, bot, address) -> str:
         ads = await ads_manager.get_ads(bot)
         test = await self.get_message_analytic(data)
@@ -285,31 +344,33 @@ class GoPlusLabs:
         top_holders = await self.get_top_holders(data)
         pair = await self.get_pair(data)
         bot_info = await bot.get_me()
-        liquidity = await add_commas_to_float(
-            round(float(data["full"]["attributes"]["reserve_in_usd"]), 2)
-        )
-        marketcap = await add_commas_to_float(
-            round(float(data["full"]["attributes"]["fully_diluted_valuation"]))
-        )
+        liquidity = await self.get_liquidity(data)
+        marketcap = await self.get_marketcap(data)
         lp_locked = await self.get_lp_locked(data)
+        buy_tax = await self.get_buy_tax(data)
+        sell_tax = await self.get_sell_tax(data)
+        creator = await self.get_creator(data)
+        owner = await self.get_owner(data)
+        pairing = await self.get_pairing(data)
+        chain = await self.get_chain(data)
         message = (
             f"@{bot_info.username} | "
             f"your 🔎 QUICKI RESULTS 🔍 for <b>{hd.code(data['full']['attributes']['name'].upper())}</b> Token!\n"
             f"<b>Name: </b> {hd.code(data['full']['attributes']['name'])}\n"
             f"<b>CA: </b> {hd.code(address)}\n\n"
             f"{test}"
-            f"<b>Chain: </b> {data['base']['platformName']}\n"
-            f"<b>Buy Tax: </b> {round(float(data['data']['buy_tax'])*100, 2) if data.get('data') else None}%\n"
-            f"<b>Sell Tax: </b> {round(float(data['data']['sell_tax'])*100, 2) if data.get('data') else None}%\n"
-            f"<b>Creator: </b> {data['data']['creator_address'] if data.get('data') else None}\n"
-            f"<b>Owner: </b> {data['data']['owner_address'] if data.get('data') else None}\n"
+            f"{chain}"
+            f"{buy_tax}"
+            f"{sell_tax}"
+            f"{creator}"
+            f"{owner}"
             f"{age}"
             f"{top_holders}\n\n"
             f"<b>💲 Market Data 💲</b>\n"
-            f"<b>Pairing:</b> {data['full']['attributes']['name']}\n"
+            f"{pairing}"
             f"{pair}"
-            f"<b>Liquidity:</b> {liquidity} $\n"
-            f"<b>Market Cap:</b> {marketcap} $\n"
+            f"{liquidity}"
+            f"{marketcap}"
             f"{lp_locked}"
             f"{age}"
             f"\n{ads}"
