@@ -69,6 +69,7 @@ async def help_cmd_handler(message: Message, config: Config, bot: Bot):
         logging.error(e)
 
 
+"""
 @router.message(F.content_type.in_({ContentType.TEXT}))
 async def reply_handler(message: Message, config: Config, bot: Bot):
     try:
@@ -109,7 +110,7 @@ async def reply_handler(message: Message, config: Config, bot: Bot):
     except Exception as e:
         logging.error(e)
 
-"""
+
 @router.message()
 async def bot_added_as_member(event, bot: Bot):
     try:

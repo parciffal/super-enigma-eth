@@ -32,8 +32,39 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                 await message.answer(
                     "📵 <b> We're sorry, but the token you provided appears to be invalid.</b>"
                 )
-            else:
-                pass
+            elif message.text == "🫂 Social Media":
+                msg = (
+                    f"🕊️ X: \nhttps://twitter.com/zeroxsai\n\n"
+                    f"🌐 Website: \nhttps://0xs.ai\n\n"
+                    f"✈️ Telegram: \nhttps://t.me/zeroxsai\n\n"
+                )
+                await message.answer(msg)
+            elif message.text == "💎 Advertisement":
+                msg = f"🗞️Looking got good advertisement?🗞️\n🚀Get in touch with @Botindeed! 🚀"
+                await message.answer(msg)
+            elif message.text == "⛓️ Chain Support":
+                msg = (
+                    f"⛓️ <b>Supported Chains</b> ⛓️\n\n"
+                    f"1. <b>Shibarium (SHIB) 🔗</b>\n"
+                    f"2. <b>Ethereum (ETH) 🔗</b>\n"
+                    f"3. <b>Binance Smart Chain (BSC) 🔗</b>\n"
+                    f"4. <b>Optimism (OL) 🔗</b>\n"
+                    f"5. <b>Cronos (CRONOS) 🔗</b>\n"
+                    f"6. <b>OKExChain (OKC) 🔗</b>\n"
+                    f"7. <b>Gnosis (GNOSIS) 🔗</b>\n"
+                    f"8. <b>Polygon (MATIC) 🔗</b>\n"
+                    f"9. <b>Fantom Opera (FTM) 🔗</b>\n"
+                    f"10. <b>zkSync (zkSYNC) 🔗</b>\n"
+                    f"11. <b>KCC (KCC) 🔗</b>\n"
+                    f"12. <b>Avalanche (AVAX) 🔗</b>\n"
+                    f"13. <b>Arbitrum (ARBITRUM) 🔗</b>\n"
+                    f"14. <b>Base (BASE) 🔗</b>\n"
+                    f"15. <b>Harmony (HARMONY) 🔗</b>\n"
+                    f"16. <b>Ethereum Wanchain (ETHW) 🔗</b>\n"
+                    f"16. <b>Ethereum Wanchain (ETHW) 🔗</b>\n"
+                    f"18. <b>Tron (TRON) 🔗</b>\n"
+                )
+                await message.answer(msg)
     except Exception as e:
         await message.answer(
             "📵 <b> We're sorry, but the token you provided appears to be invalid or error appeared.\n Please try again later. </b>"
