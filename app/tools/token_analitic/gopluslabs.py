@@ -90,7 +90,7 @@ class GoPlusLabs:
     CH_BOOL = {"1": True, "0": False}
     MSG_BOOL = {"0": "✅", "1": "🚫"}
     CHECK_BOOL = {"1": "✅", "0": "🚫"}
-    QUICK_BOOL = {False: "✅", True: "🚫", None: "🚫",}
+    QUICK_BOOL = {False: "✅", True: "🚫", None: "🚫", }
     QUICK_REVERSE = {True: "✅", False: "🚫"}
 
     def __init__(self):
@@ -112,7 +112,7 @@ class GoPlusLabs:
         async with self.session.post(url, headers=headers, json=dt) as response:
             data = await response.text()
         parsed_data = json.loads(data)
-        
+
         return parsed_data
 
     async def get_token_base_info(self, address) -> dict:
@@ -238,20 +238,26 @@ class GoPlusLabs:
         except:
             pass
         count += 1
-        
+
         return count
 
     async def get_quick_message(self, data):
         try:
             print(data['data'])
             count = await self.check_quick_message(data)
-            honey_pot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get('is_Honeypot') is not None else f"<b>N/A</b>"
-            mintable = self.QUICK_BOOL[data['data']['is_Mintable']] if data['data'].get('is_Mintable') is not None else f"<b>N/A</b>"
-            proxy = self.QUICK_BOOL[data['data']['is_Proxy']] if data['data'].get('is_Proxy') is not None else f"<b>N/A</b>"
-            blacklisted = self.QUICK_BOOL[data['data']['can_Blacklist']] if data['data'].get('can_Blacklist') is not None else f"<b>N/A</b>"
-            in_dex = self.QUICK_BOOL[data['data']['is_in_dex']] if data['data'].get('is_in_dex') is not None else self.QUICK_BOOL[False]
-            contract_verified = self.QUICK_REVERSE[data['data']['contract_Verified']] if data['data'].get('contract_Verified') is not None else f"{self.QUICK_REVERSE[False]}"
-            
+            honey_pot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get(
+                'is_Honeypot') is not None else f"<b>N/A</b>"
+            mintable = self.QUICK_BOOL[data['data']['is_Mintable']] if data['data'].get(
+                'is_Mintable') is not None else f"<b>N/A</b>"
+            proxy = self.QUICK_BOOL[data['data']['is_Proxy']] if data['data'].get(
+                'is_Proxy') is not None else f"<b>N/A</b>"
+            blacklisted = self.QUICK_BOOL[data['data']['can_Blacklist']] if data['data'].get(
+                'can_Blacklist') is not None else f"<b>N/A</b>"
+            in_dex = self.QUICK_BOOL[data['data']['is_in_dex']] if data['data'].get(
+                'is_in_dex') is not None else self.QUICK_BOOL[False]
+            contract_verified = self.QUICK_REVERSE[data['data']['contract_Verified']] if data['data'].get(
+                'contract_Verified') is not None else f"{self.QUICK_REVERSE[False]}"
+
             return (
                 f"<b>🛡️Safety Test's</b>\n\n"
                 f"<b>🍯Honeypot: </b> {honey_pot}\n"
@@ -269,12 +275,18 @@ class GoPlusLabs:
         try:
             if data.get('data') and data.get("data").get("is_honeypot"):
                 count = await self.check_get_message_analytic(data)
-                honeypot = self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get('is_honeypot') else f"<b>N/A </b> "
-                mintable = self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get('is_mintable') else f"<b>N/A </b> "
-                proxy = self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get('is_proxy') else f"<b>N/A </b> "
-                blacklisted = self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get('is_blacklisted') else f"<b>N/A </b> "
-                in_dex = self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get('is_in_dex') else f"{self.MSG_BOOL['1']}"
-                open_source = self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get('is_open_source') else f"{self.MSG_BOOL['1']}"
+                honeypot = self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get(
+                    'is_honeypot') else f"<b>N/A </b> "
+                mintable = self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get(
+                    'is_mintable') else f"<b>N/A </b> "
+                proxy = self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get(
+                    'is_proxy') else f"<b>N/A </b> "
+                blacklisted = self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get(
+                    'is_blacklisted') else f"<b>N/A </b> "
+                in_dex = self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get(
+                    'is_in_dex') else f"{self.MSG_BOOL['1']}"
+                open_source = self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get(
+                    'is_open_source') else f"{self.MSG_BOOL['1']}"
                 return (
                     f"<b>🛡️Safety Test's</b>\n\n"
                     f"<b>🍯Honeypot: </b> {honeypot}\n"
@@ -289,7 +301,7 @@ class GoPlusLabs:
                 return await self.get_quick_message(data)
         except:
             return ""
-        
+
     async def calculate_age(self, data):
         try:
             current_time = datetime.utcnow()
@@ -477,7 +489,8 @@ class GoPlusLabs:
             start = time.time()
             url = "https://qpi.quickintel.io/api/getthirdaudit"
 
-            headers = {"api_key": "0xs-KUen48jjdHV223ss", "Content-Type": "application/json"}
+            headers = {"api_key": "0xs-KUen48jjdHV223ss",
+                       "Content-Type": "application/json"}
             payload = {
                 "chain": data['base']['identifier'],
                 "tokenAddress": address,
@@ -488,7 +501,7 @@ class GoPlusLabs:
                     # print(resp.status)
                     # print(await resp.json())
                     data['data'] = await resp.json()
-            print("Quick Audit: ",time.time() - start)
+            print("Quick Audit: ", time.time() - start)
             return data
         except:
             return data
@@ -620,8 +633,8 @@ class GoPlusLabs:
         start = time.time()
         data = await self.get_gecko_base_info(address)
         progress_msg = await bot.send_message(
-                    message.chat.id, text=f"🔎 0xS Analyzer on <b>{data['base']['platformName']}</b> in progress 🔍"
-                )
+            message.chat.id, text=f"🔎 0xS Analyzer on <b>{data['base']['platformName']}</b> in progress 🔍"
+        )
         if data['base'] is not None:
             data = await self.get_gecko_full_info(address, data)
             if data["base"]["identifier"] != "shibarium":
