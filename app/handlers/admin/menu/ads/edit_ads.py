@@ -36,85 +36,90 @@ async def prepare_ads_text(ads: AdsModel):
         f"<b>Name</b>: {ads.name}\n"
         f"<b>Description</b>: {ads.description}\n"
         f"<b>Show</b>: {ads.show}"
+        f'<a href="{ads.media}">&#8203;</a>'
     )
 
 
 async def edit_ads_view(message, state: FSMContext, ads: AdsModel):
     text = await prepare_ads_text(ads)
     await state.clear()
-
-    if str(ads.media) == "":
-        await message.delete()
-        await message.answer(
-            text, parse_mode="html", reply_markup=await ads_back_kb(ads.id, ads.show)
-        )
-    else:
-        file = FSInputFile(ads.media)
-        if str(ads.media).find("photo") != -1:
-            await message.delete()
-            await message.answer_photo(
-                photo=file,
-                caption=text,
-                parse_mode="html",
-                reply_markup=await ads_back_kb(ads.id, ads.show),
-            )
-        elif str(ads.media).find("video") != -1:
-            await message.delete()
-            await message.answer_video(
-                video=file,
-                caption=text,
-                parse_mode="html",
-                reply_markup=await ads_back_kb(ads.id, ads.show),
-            )
-        elif str(ads.media).find("gif") != -1:
-            await message.delete()
-            await message.answer_animation(
-                animation=file,
-                caption=text,
-                parse_mode="html",
-                reply_markup=await ads_back_kb(ads.id, ads.show),
-            )
-        else:
-            pass
+    await message.delete()
+    await message.answer(
+        text, parse_mode="html", reply_markup=await ads_back_kb(ads.id, ads.show)
+    )
+    # if str(ads.media) == "":
+    #     await message.delete()
+    #     await message.answer(
+    #         text, parse_mode="html", reply_markup=await ads_back_kb(ads.id, ads.show)
+    #     )
+    # else:
+    #     file = FSInputFile(ads.media)
+    #     if str(ads.media).find("photo") != -1:
+    #         await message.delete()
+    #         await message.answer_photo(
+    #             photo=file,
+    #             caption=text,
+    #             parse_mode="html",
+    #             reply_markup=await ads_back_kb(ads.id, ads.show),
+    #         )
+    #     elif str(ads.media).find("video") != -1:
+    #         await message.delete()
+    #         await message.answer_video(
+    #             video=file,
+    #             caption=text,
+    #             parse_mode="html",
+    #             reply_markup=await ads_back_kb(ads.id, ads.show),
+    #         )
+    #     elif str(ads.media).find("gif") != -1:
+    #         await message.delete()
+    #         await message.answer_animation(
+    #             animation=file,
+    #             caption=text,
+    #             parse_mode="html",
+    #             reply_markup=await ads_back_kb(ads.id, ads.show),
+    #         )
+    #     else:
+    #         pass
 
 
 @router.message(
     StateFilter(EditAdsState.ads_media),
-    F.content_type.in_([ContentType.PHOTO, ContentType.VIDEO, ContentType.ANIMATION]),
+    F.content_type.in_(
+        [ContentType.TEXT]),
 )
 async def view_ads_chg_media_mess(message: Message, bot: Bot, state: FSMContext):
     try:
         data = await state.get_data()
         #
-        if message.photo is not None:
-            destination_path = (
-                f"app/media/admin/photo/{message.photo[-1].file_unique_id}.png"
-            )
-            file_id = message.photo[-1].file_id
-        elif message.video is not None:
-            file_id = message.video.file_id
-            destination_path = (
-                f"app/media/admin/video/{message.video.file_unique_id}.mp4"
-            )
-        elif message.animation is not None:
-            file_id = message.animation.file_id
-            destination_path = (
-                f"app/media/admin/gif/{message.animation.file_unique_id}.gif.mp4"
-            )
-        else:
-            await state.set_state(EditAdsState.ads_media)
-            await message.answer(
-                text="Something's wrong resend media \n"
-                "it should be` photo, video(0-60 seconds), gif"
-            )
-        file = await bot.get_file(file_id)
-        print(destination_path)
-        file_save = await bot.download(file, destination_path)
-        print(file_save)
+        # if message.photo is not None:
+        #     destination_path = (
+        #         f"app/media/admin/photo/{message.photo[-1].file_unique_id}.png"
+        #     )
+        #     file_id = message.photo[-1].file_id
+        # elif message.video is not None:
+        #     file_id = message.video.file_id
+        #     destination_path = (
+        #         f"app/media/admin/video/{message.video.file_unique_id}.mp4"
+        #     )
+        # elif message.animation is not None:
+        #     file_id = message.animation.file_id
+        #     destination_path = (
+        #         f"app/media/admin/gif/{message.animation.file_unique_id}.gif.mp4"
+        #     )
+        # else:
+        #     await state.set_state(EditAdsState.ads_media)
+        #     await message.answer(
+        #         text="Something's wrong resend media \n"
+        #         "it should be` photo, video(0-60 seconds), gif"
+        #     )
+        # file = await bot.get_file(file_id)
+        # print(destination_path)
+        # file_save = await bot.download(file, destination_path)
+        # print(file_save)
         ads = await AdsModel.get(id=data["ads_id"])
-        if ads.media != "":
-            await del_media(ads.media)
-        ads.media = destination_path
+        # if ads.media != "":
+        #     await del_media(ads.media)
+        ads.media = message.text
         await ads.save()
         await state.clear()
         await edit_ads_view(message, state, ads)
@@ -132,7 +137,7 @@ async def view_ads_no_media(
         await state.clear()
         ads = await AdsModel.get(id=callback_data.ads_id)
         if ads.media != "":
-            await del_media(ads.media)
+            # await del_media(ads.media)
             ads.media = ""
             await ads.save()
         await edit_ads_view(query.message, state, ads)
@@ -153,7 +158,7 @@ async def view_ads_chg_media(
         if query.message:
             await query.message.delete()
             await query.message.answer(
-                "Ok now send media of ads\n",
+                "Ok now send media url of ads\n",
                 reply_markup=await continue_view_kb(callback_data.ads_id),
             )
     except Exception as e:
@@ -192,7 +197,8 @@ async def view_ads_delete(
 
 
 @router.message(
-    F.content_type.in_({ContentType.TEXT}), StateFilter(EditAdsState.ads_description)
+    F.content_type.in_({ContentType.TEXT}), StateFilter(
+        EditAdsState.ads_description)
 )
 async def view_ads_chg_desc_msg(message: Message, state: FSMContext, bot: Bot):
     try:

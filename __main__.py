@@ -55,7 +55,8 @@ async def on_startup(
     }
 
     logging.debug(f"Groups Mode - {states[bot_info.can_join_groups]}")
-    logging.debug(f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
+    logging.debug(
+        f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
     logging.debug(f"Inline Mode - {states[bot_info.supports_inline_queries]}")
 
     logging.error("Bot started!")
