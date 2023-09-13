@@ -12,4 +12,4 @@ class AdsModel(models.Model):
         fields = "__all__"
 
     async def ads_to_message(self):
-        return f"📊📈 <b>{self.name}: {self.description}</b>"
+        return f"📣 <b>{self.name}: {self.description}</b>"

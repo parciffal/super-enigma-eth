@@ -90,18 +90,29 @@ class GoPlusLabs:
     CH_BOOL = {"1": True, "0": False}
     MSG_BOOL = {"0": "✅", "1": "🚫"}
     CHECK_BOOL = {"1": "✅", "0": "🚫"}
+    QUICK_BOOL = {False: "✅", True: "🚫", None: "🚫",}
+    QUICK_REVERSE = {True: "✅", False: "🚫"}
 
     def __init__(self):
         self.session = aiohttp.ClientSession()
         # Set the locale to the user's default locale
         self.locale = locale.setlocale(locale.LC_ALL, "")
 
-    async def aiohttp_get(self, url) -> dict:
-        start = time.time()
-        async with self.session.get(url) as response:
+    async def aiohttp_get(self, url, headers={}) -> dict:
+        # start = time.time()
+        async with self.session.get(url, headers=headers) as response:
             data = await response.text()
         parsed_data = json.loads(data)
-        print(time.time() - start)
+        # print(time.time() - start)
+        return parsed_data
+
+    async def aiohttp_post(self, url, headers, dt) -> dict:
+        # start = time.time()
+        # print(time.time() - start)
+        async with self.session.post(url, headers=headers, json=dt) as response:
+            data = await response.text()
+        parsed_data = json.loads(data)
+        
         return parsed_data
 
     async def get_token_base_info(self, address) -> dict:
@@ -189,22 +200,96 @@ class GoPlusLabs:
 
         return count
 
-    async def get_message_analytic(self, data):
+    async def check_quick_message(self, data) -> int:
+        count = 0
         try:
-            count = await self.check_get_message_analytic(data)
+            if (
+                data["data"]["is_Honeypot"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["is_Mintable"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["is_Proxy"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["can_Blacklist"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["contract_Verified"]
+            ):
+                count += 1
+        except:
+            pass
+        count += 1
+        
+        return count
+
+    async def get_quick_message(self, data):
+        try:
+            print(data['data'])
+            count = await self.check_quick_message(data)
+            honey_pot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get('is_Honeypot') is not None else f"<b>N/A</b>"
+            mintable = self.QUICK_BOOL[data['data']['is_Mintable']] if data['data'].get('is_Mintable') is not None else f"<b>N/A</b>"
+            proxy = self.QUICK_BOOL[data['data']['is_Proxy']] if data['data'].get('is_Proxy') is not None else f"<b>N/A</b>"
+            blacklisted = self.QUICK_BOOL[data['data']['can_Blacklist']] if data['data'].get('can_Blacklist') is not None else f"<b>N/A</b>"
+            in_dex = self.QUICK_BOOL[data['data']['is_in_dex']] if data['data'].get('is_in_dex') is not None else self.QUICK_BOOL[False]
+            contract_verified = self.QUICK_REVERSE[data['data']['contract_Verified']] if data['data'].get('contract_Verified') is not None else f"{self.QUICK_REVERSE[False]}"
+            
             return (
                 f"<b>🛡️Safety Test's</b>\n\n"
-                f"<b>🍯Honeypot: </b> {self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get('is_honeypot') else self.MSG_BOOL['1']}    "
-                f"<b>🖨️Mintable: </b> {self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get('is_mintable') else self.MSG_BOOL['1']}\n"
-                f"<b>🔄Proxy: </b> {self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get('is_proxy') else self.MSG_BOOL['1']}           "
-                f"<b>🚫Blacklisted: </b> {self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get('is_blacklisted') else self.MSG_BOOL['1']}\n"
-                f"<b>📈In Dex: </b> {self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get('is_in_dex') else self.MSG_BOOL['1']}          "
-                f"<b>🌐Open Source: </b> {self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get('is_open_source') else self.MSG_BOOL['1']}\n\n"
+                f"<b>🍯Honeypot: </b> {honey_pot}\n"
+                f"<b>🖨️Mintable: </b> {mintable}\n"
+                f"<b>🔄Proxy: </b> {proxy}\n"
+                f"<b>🚫Blacklisted: </b> {blacklisted}\n"
+                f"<b>📈In Dex: </b> {in_dex}\n"
+                f"<b>🌐Contract Verified: </b> {contract_verified}\n\n"
                 f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
             )
-        except:
-            return "🍯 Test: DOES NOT SEEM LIKE HONEYPOT\n\n"
+        except Exception as e:
+            return ""
 
+    async def get_message_analytic(self, data):
+        try:
+            if data.get('data') and data.get("data").get("is_honeypot"):
+                count = await self.check_get_message_analytic(data)
+                honeypot = self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get('is_honeypot') else f"<b>N/A </b> "
+                mintable = self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get('is_mintable') else f"<b>N/A </b> "
+                proxy = self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get('is_proxy') else f"<b>N/A </b> "
+                blacklisted = self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get('is_blacklisted') else f"<b>N/A </b> "
+                in_dex = self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get('is_in_dex') else f"{self.MSG_BOOL['1']}"
+                open_source = self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get('is_open_source') else f"{self.MSG_BOOL['1']}"
+                return (
+                    f"<b>🛡️Safety Test's</b>\n\n"
+                    f"<b>🍯Honeypot: </b> {honeypot}\n"
+                    f"<b>🖨️Mintable: </b> {mintable}\n"
+                    f"<b>🔄Proxy: </b> {proxy}\n"
+                    f"<b>🚫Blacklisted: </b> {blacklisted}\n"
+                    f"<b>📈In Dex: </b> {in_dex}\n"
+                    f"<b>🌐Open Source: </b> {open_source}\n\n"
+                    f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
+                )
+            else:
+                return await self.get_quick_message(data)
+        except:
+            return ""
+        
     async def calculate_age(self, data):
         try:
             current_time = datetime.utcnow()
@@ -212,7 +297,7 @@ class GoPlusLabs:
                                               "%Y-%m-%dT%H:%M:%S.%fZ")
             days = (current_time - creation_time).days
             if days:
-                return f"<b>Contract Age:</b> Created {days} days ago\n"
+                return f"<b>📅 Contract Age:</b> Created {days} days ago\n"
             else:
                 return ""
         except:
@@ -238,11 +323,12 @@ class GoPlusLabs:
                     try:
                         days = await self.calculate_days_left(i["locked_detail"])
                         if days > 0:
-                            return f"<b>🔐LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  for <b>{days} Days</b> \n"
+                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  for <b>{days} Days</b> \n"
                         else:
-                            return f"<b>🔐LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  <b>Expired for {-1*days} Days</b> \n"
+                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  <b>Expired for {-1*days} Days</b> \n"
                     except:
-                        return f"<b>🔐LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>\n"
+                        return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>\n"
+            return ""
         except:
             return ""
 
@@ -253,8 +339,8 @@ class GoPlusLabs:
         else:
             url = None
         if data.get('data'):
-            if data['data']['holders']:
-                msg = "<b>Top Holders: </b>"
+            if data['data'].get('holders'):
+                msg = "<b>📊 Top Holders: </b>"
                 for holder in data['data']['holders']:
                     if url is not None:
                         percent = str(round(float(holder['percent'])*100))+"%"
@@ -276,34 +362,48 @@ class GoPlusLabs:
                     url = None
                 pair = hd.link("View on Scan", url +
                                include['attributes']['quote_address'])
-                return f"<b>Pair: </b> {pair} \n"
+                return f"<b>🔄 Pair: </b> {pair} \n"
         return ""
 
     async def get_buy_tax(self, data):
         try:
             buy_tax = round(float(data['data']['buy_tax'])*100, 2)
-            return f"<b>Buy Tax: </b> {buy_tax}%\n"
+            msg = f"{buy_tax} %" if buy_tax else ' N\A '
+            return f"<b>💰 Buy Tax: </b> {msg}\n"
         except:
-            return ""
+            try:
+                buy_tax = data['data']['buy_Tax']
+                if buy_tax is None:
+                    return f"<b>💰 Buy Tax: </b> N\A \n"
+                msg = f"{buy_tax} %" if buy_tax else ' N\A '
+                return f"<b>💰 Buy Tax: </b> {msg}\n"
+            except:
+                return ""
 
     async def get_sell_tax(self, data):
         try:
             sell_tax = round(float(data['data']['sell_tax'])*100, 2)
-            return f"<b>Sell Tax: </b> {sell_tax}%\n"
+            msg = f"{sell_tax} %" if sell_tax else ' N\A '
+            return f"<b>💸 Sell Tax: </b> {msg}\n"
         except:
-            return ""
+            try:
+                sell_tax = data['data']['sell_Tax']
+                msg = f"{sell_tax} %" if sell_tax else ' N\A '
+                return f"<b>💸 Sell Tax: </b> {msg}\n"
+            except:
+                return ""
 
     async def get_creator(self, data):
         try:
             creator = data['data']['creator_address']
-            return f"<b>Creator:</b> {hd.code(creator)}\n"
+            return f"<b>🧑‍🎨 Creator:</b> {hd.code(creator)}\n"
         except:
             return ""
 
     async def get_owner(self, data):
         try:
             owner = data['data']['owner_address']
-            return f"<b>Owner: </b> {hd.code(owner)}\n"
+            return f"<b>👤 Owner: </b> {hd.code(owner)}\n"
         except:
             return ""
 
@@ -312,7 +412,7 @@ class GoPlusLabs:
             liquidity = await add_commas_to_float(
                 round(float(data["full"]["attributes"]["reserve_in_usd"]), 2)
             )
-            return f"<b>Liquidity:</b> {liquidity} $\n"
+            return f"<b>💰 Liquidity:</b> {liquidity} $\n"
         except:
             return ""
 
@@ -322,19 +422,19 @@ class GoPlusLabs:
                 round(float(data["full"]["attributes"]
                       ["fully_diluted_valuation"]))
             )
-            return f"<b>Market Cap:</b> {marketcup} $\n"
+            return f"<b>📊 Market Cap:</b> {marketcup} $\n"
         except:
             return ""
 
     async def get_pairing(self, data):
         try:
-            return f"<b>Pairing:</b> {data['full']['attributes']['name']}\n"
+            return f"<b>🔄 Pairing:</b> {data['full']['attributes']['name']}\n"
         except:
             return ""
 
     async def get_chain(self, data):
         try:
-            return f"<b>Chain:</b> {data['base']['identifier']}\n\n"
+            return f"<b>🌐 Chain:</b> {data['base']['platformName']}\n\n"
         except:
             return ""
 
@@ -353,7 +453,7 @@ class GoPlusLabs:
                 creation_timestamp_ms / 1000.0)
             days = (current_time - creation_time).days
             if days:
-                return f"<b>Pair Created</b>: {days} Days ago\n"
+                return f"<b>📅 Pair Created</b>: {days} Days ago\n"
             else:
                 return ""
         except:
@@ -368,9 +468,30 @@ class GoPlusLabs:
             else:
                 url = None
             pair = hd.link("View on Scan", url + address)
-            return f"<b>Pair: </b> {pair} \n"
+            return f"<b>👁️ Pair: </b> {pair} \n"
         except:
             return ""
+
+    async def quickintel_audit(self, data, address):
+        try:
+            start = time.time()
+            url = "https://qpi.quickintel.io/api/getthirdaudit"
+
+            headers = {"api_key": "0xs-KUen48jjdHV223ss", "Content-Type": "application/json"}
+            payload = {
+                "chain": data['base']['identifier'],
+                "tokenAddress": address,
+                "id": "0xs",
+            }
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url, headers=headers, json=payload) as resp:
+                    # print(resp.status)
+                    # print(await resp.json())
+                    data['data'] = await resp.json()
+            print("Quick Audit: ",time.time() - start)
+            return data
+        except:
+            return data
 
     async def get_message(self, data, bot, address) -> str:
         ads = await ads_manager.get_ads(bot)
@@ -389,24 +510,26 @@ class GoPlusLabs:
         pairing = await self.get_pairing(data)
         chain = await self.get_chain(data)
         dex_data = await self.get_dex_data(address)
-
+        # pprint(data['data'])
         if pair == "":
             try:
                 pair = await self.get_dex_pair(data, dex_data['quoteToken']['address'])
             except:
                 pass
-
         try:
-            name = dex_data['baseToken']['name']
-        except:
             name = data['full']['attributes']['name']
+        except:
+            try:
+                name = dex_data['baseToken']['name']
+            except:
+                name = data['base']['baseTokenName']
 
         try:
-            liquidity = f"<b>Liquidity:</b> {dex_data['liquidity']['usd']} $\n"
+            liquidity = f"<b>💰 Liquidity:</b> {dex_data['liquidity']['usd']} $\n"
         except:
             pass
         try:
-            liquidity_base = f"<b>Pooled {name}:</b> {await add_commas_to_float(dex_data['liquidity']['base'])}\n"
+            liquidity_base = f"<b>🌊 Pooled {name}:</b> {await add_commas_to_float(dex_data['liquidity']['base'])}\n"
         except:
             liquidity_base = ""
         try:
@@ -415,27 +538,27 @@ class GoPlusLabs:
             pair_created_at = age
 
         try:
-            price = f"<b>Price:</b> {dex_data['priceUsd']} $\n"
+            price = f"<b>💲 Price:</b> {dex_data['priceUsd']} $\n"
         except:
             price = ""
 
         try:
-            price_change = f"<b>24H Price Change: </b> {dex_data['priceChange']['h24']}%\n"
+            price_change = f"<b>📉 24H Price Change: </b> {dex_data['priceChange']['h24']}%\n"
         except:
             price_change = ""
 
         try:
-            txns = f"<b>24H Txns:</b>"
-            txns += f"\n      <b>Buy:</b> {dex_data['txns']['h24']['buys']} "
-            txns += f"| <b>Sell:</b> {dex_data['txns']['h24']['sells']}\n"
+            txns = f"📈 <b>24H Txns:</b>"
+            txns += f"\n       <b>|_🟢 Buy:</b> {dex_data['txns']['h24']['buys']} "
+            txns += f"| <b>🔴 Sell:</b> {dex_data['txns']['h24']['sells']}\n"
         except:
             txns = ""
 
         message = (
             f"@{bot_info.username} | "
             f"your 🔎 0XS RESULTS 🔍 for <b>{hd.code(name.upper())}</b> Token!\n"
-            f"<b>Name: </b> {hd.code(name)}\n"
-            f"<b>CA: </b> {hd.code(address)}\n"
+            f"<b>🏷️ Name: </b> {hd.code(name)}\n"
+            f"<b>🔗 CA: </b> {hd.code(address)}\n"
             f"{chain}"
             f"{test}"
             f"{buy_tax}"
@@ -480,11 +603,11 @@ class GoPlusLabs:
             url = f"{links[key]}{address}"
             name = key
             if key == "geckoterminal":
-                name = "Gecko"
+                name = "🦎 Gecko"
             if key == "dextools":
-                name = "Dex"
+                name = "📈 Dex"
             if key == "browserScanAddress":
-                name = "Scan"
+                name = "📡 Scan"
             keyboards.append(
                 {
                     "name": name,
@@ -493,19 +616,27 @@ class GoPlusLabs:
             )
         return keyboards
 
-    async def get_token_security(self, address: str, bot: Bot):
+    async def get_token_security(self, message,  address: str, bot: Bot):
+        start = time.time()
         data = await self.get_gecko_base_info(address)
+        progress_msg = await bot.send_message(
+                    message.chat.id, text=f"🔎 0xS Analyzer on <b>{data['base']['platformName']}</b> in progress 🔍"
+                )
         if data['base'] is not None:
             data = await self.get_gecko_full_info(address, data)
             if data["base"]["identifier"] != "shibarium":
                 data = await self.get_token_security_info(data, address)
+            else:
+                data = await self.quickintel_audit(data, address)
             keyboards = await self.get_button_links(data, address)
             msg = await self.get_message(data, bot, address)
-            return msg, keyboards
+            print("Response Time: ", time.time() - start)
+            return msg, keyboards, bot, progress_msg
         else:
             msg = "📵  <b>Apologies, but the token you are inquiring about does not currently have adequate liquidity.  \nPlease try again later.</b>"
             keyboards = None
-            return msg, keyboards
+            print("Response Time: ", time.time() - start)
+            return msg, keyboards, bot, progress_msg
 
 
 gopluslabs_manager = GoPlusLabs()

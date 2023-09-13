@@ -11,21 +11,40 @@ from app.tools.token_analitic.gopluslabs import get_link_keyboard
 
 router = Router()
 
-
+async def change_message(bot, progress_msg, msg, keyboard):
+    await progress_msg.delete()
+    try:
+        await bot.delete_message(
+                        progress_msg.chat.id, progress_msg.message_id
+                    )
+    except Exception as e:
+        logging.error(e)
+        
+    if keyboard is None:
+        await bot.send_message(
+            text=msg,
+            chat_id=progress_msg.chat.id,
+        )
+    else:
+        keyb = await get_link_keyboard(keyboard)
+        await bot.send_message(
+            text=msg,
+            chat_id=progress_msg.chat.id,
+            reply_markup=keyb,
+            
+        )
 @router.message(F.content_type.in_({ContentType.TEXT}))
 async def token_cmd_handler(message: Message, config: Config, bot: Bot):
     try:
         if message.text:
             if len(message.text) == 42 and message.text.startswith("0"):
                 address = message.text
-                msg, keyboard = await gopluslabs_manager.get_token_security(
-                    address, bot
+                
+                # progress_msg: Message = await message.answer("🔎0xS Analyz in progress🔍")
+                msg, keyboard, bot, progress_msg = await gopluslabs_manager.get_token_security(
+                    message, address, bot
                 )
-                if keyboard is None:
-                    await message.answer(msg, parse_mode="html")
-                else:
-                    keyb = await get_link_keyboard(keyboard)
-                    await message.answer(msg, parse_mode="html", reply_markup=keyb)
+                await change_message(bot, progress_msg, msg, keyboard)
             elif message.text.startswith("0") and (
                 len(message.text) < 42 or len(message.text) > 42
             ):
@@ -40,7 +59,7 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                 )
                 await message.answer(msg)
             elif message.text == "💎 Advertisement":
-                msg = f"🗞️Looking got good advertisement?🗞️\n🚀Get in touch with @Botindeed! 🚀"
+                msg = f"🗞️ Looking got good advertisement? 🗞️\n🚀 Get in touch with @Botindeed! 🚀"
                 await message.answer(msg)
             elif message.text == "⛓️ Chain Support":
                 msg = (
@@ -65,8 +84,9 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                     f"18. <b>Tron (TRON) 🔗</b>\n"
                 )
                 await message.answer(msg)
+
     except Exception as e:
         await message.answer(
             "📵 <b> We're sorry, but the token you provided appears to be invalid or error appeared.\n Please try again later. </b>"
         )
-        logging.error(e)
+        logging.error(repr(e))

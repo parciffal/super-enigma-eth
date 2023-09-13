@@ -89,7 +89,6 @@ async def main():
     )
     token = config.bot.token
     bot_settings = {"session": session, "parse_mode": "HTML"}
-
     bot = Bot(token, **bot_settings)
     storage = MemoryStorage()
 

@@ -6,7 +6,7 @@ from app.utils.cb_data.admin.menu_cb import AdminMenuActions, AdminMenuCB
 async def start_menu() -> InlineKeyboardMarkup:
     buttons = []
     for i in AdminMenuActions:
-        if i not in ["back", "add_ads", "show_ads", "finish"]:
+        if i not in ["back", "add_ads", "show_ads", "finish", "👥 Goups"]:
             buttons.append(
                 [
                     InlineKeyboardButton(

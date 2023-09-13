@@ -12,6 +12,7 @@ from aiogram.filters.chat_member_updated import (
     IS_NOT_MEMBER,
     MEMBER,
 )
+from pprint import pprint
 
 import logging
 
@@ -23,7 +24,7 @@ from app.filters.is_owner import PrivateChatFilter
 router = Router()
 
 
-@router.message(Command("start"), PrivateChatFilter())
+@router.message(Command("start"))
 async def token_cmd_handler(message: Message, config: Config, bot: Bot):
     try:
         bot_info = await bot.get_me()
@@ -37,33 +38,53 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
         kl.append([KeyboardButton(text="⛓️ Chain Support")])
         reply_markup = ReplyKeyboardMarkup(keyboard=kl, resize_keyboard=True)
         msg = (
-            f"Welcome to <b>@{bot_info.username}</b> bot \n"
-            f"This bot generates an analysis report for <b>BSC, ETH, OKC,"
-            f" Optimism, Cronos, HECO, Polygon, Fantom, KCC, Avalanche,"
-            f" Harmony</b> chain's token's\n"
-            f"\n<b>How to use bot?</b>\n"
-            f"Send contract address, the bot will determine which chain it"
-            f" is and then generates an analysis report.\n"
-            f"\n<b>How to add the bot to Group?</b>\n"
-            f"Add @{bot_info.username} to your group and then give it"
-            f" admin rights. It is ready to use.\n"
+            f"🚀 Welcome to <b>@{bot_info.username}</b> - The Token Analyzer Bot! 📊\n\n"
+            f"🔍 This bot specializes in generating detailed analysis reports for tokens on various chains:\n"
+            f"   - <b>Shibarium</b>\n"
+            f"   - <b>BSC (Binance Smart Chain)</b>\n"
+            f"   - <b>ETH (Ethereum)</b>\n"
+            f"   - <b>OKC (OKCoin Chain)</b>\n"
+            f"   - <b>Optimism</b>\n"
+            f"   - <b>Cronos</b>\n"
+            f"   - <b>Polygon</b>\n"
+            f"   - <b>Fantom</b>\n"
+            f"   - <b>Avalanche</b>\n"
+            f"   - <b>Harmony</b>\n"
+            f"And more..."
+            f"\n📈 <b>How to use the bot?</b>\n"
+            f"   Simply send a contract address, and the bot will automatically detect the blockchain it belongs to and generate an in-depth analysis report for you! 📄\n"
+            f"\n👥 <b>How to add the bot to your Group?</b>\n"
+            f"   To enable group analysis, add @{bot_info.username} as an administrator in your group, and it's ready to assist your community! 💬\n"
+            f"\n📢 <b>Stay tuned for updates and new features!</b>\n"
+            f"   We're constantly improving to provide you with the best token analysis experience! 🚀\n"
         )
+
+        # Add any more specific details or features you want to highlight here.
+
         await message.answer(msg, parse_mode="html", reply_markup=reply_markup)
     except Exception as e:
         logging.error(e)
 
 
-@router.message(Command("help"), PrivateChatFilter())
+@router.message(Command("help"))
 async def help_cmd_handler(message: Message, config: Config, bot: Bot):
     try:
         bot_info = await bot.get_me()
         msg = (
-            f"🔍 @{bot_info.username} you can analyze token with an instant and fast reply.\n"
-            f"\n🫂 Social Media - Check for the updates\n"
-            f"💎 Advertisement - Contact for ads\n"
-            f"⛓️ Chain Support - List supported chains\n\n"
-            f"❓Always DYOR and make yourself rich! 😉"
+            f"🚀 Welcome to <b>@{bot_info.username}</b> - Your Instant Token Analyzer Bot! 📊\n\n"
+            f"🔍 Need a quick token analysis? Look no further! Just send a contract address, and I'll provide you with an instant and fast reply! 💬\n"
+            f"\n🌐 <b>Features:</b>\n"
+            f"   - Real-time token data 📈\n"
+            f"   - Market trends 📉\n"
+            f"   - Social media 🗞️\n"
+            f"   - Chain support ⛓️\n\n"
+            f"💎 Looking to promote your project or product? Contact us for advertisement opportunities! 📣\n"
+            f"\n❓ Always remember to DYOR (Do Your Own Research) and make informed decisions on your journey to financial success! 💪💰\n"
+            f"\n🤝 Have any questions or need assistance? Feel free to ask anytime. We're here to help! 🙌"
         )
+
+        # You can further customize or add specific details to this message as needed.
+
         await message.answer(msg)
     except Exception as e:
         logging.error(e)
@@ -109,19 +130,18 @@ async def reply_handler(message: Message, config: Config, bot: Bot):
                 await message.answer(msg)
     except Exception as e:
         logging.error(e)
+"""
 
-
-@router.message()
+@router.message(F.content_type.in_({ContentType.NEW_CHAT_MEMBERS}))
 async def bot_added_as_member(event, bot: Bot):
     try:
-        from pprint import pprint
-
-        pprint(event)
         try:
             if event.new_chat_member:
-                await bot.send_message(event.chat.id, "Bot added to group")
+                info = await bot.get_me()
+                if event.new_chat_member['id'] == info.id:
+                    await bot.send_message(event.chat.id, f"🤖 {info.username} has joined the group!\nTo get started, send /start. \nTo get help send /help🚀👋")
         except:
             pass
     except Exception as e:
         logging.error(e)
-"""
+
