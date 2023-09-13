@@ -200,7 +200,7 @@ class GoPlusLabs:
 
         return count
 
-    async def check_quick_message(self, data) -> int:
+    async def check_quick_message(self, data, liquidity) -> int:
         count = 0
         try:
             if (
@@ -237,14 +237,14 @@ class GoPlusLabs:
                 count += 1
         except:
             pass
-        count += 1
+        if liquidity != "":
+            count += 1
 
         return count
 
-    async def get_quick_message(self, data):
+    async def get_quick_message(self, data, liquidity):
         try:
-            print(data['data'])
-            count = await self.check_quick_message(data)
+            count = await self.check_quick_message(data, liquidity)
             honey_pot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get(
                 'is_Honeypot') is not None else f"<b>N/A</b>"
             mintable = self.QUICK_BOOL[data['data']['is_Mintable']] if data['data'].get(
@@ -253,8 +253,8 @@ class GoPlusLabs:
                 'is_Proxy') is not None else f"<b>N/A</b>"
             blacklisted = self.QUICK_BOOL[data['data']['can_Blacklist']] if data['data'].get(
                 'can_Blacklist') is not None else f"<b>N/A</b>"
-            in_dex = self.QUICK_BOOL[data['data']['is_in_dex']] if data['data'].get(
-                'is_in_dex') is not None else self.QUICK_BOOL[False]
+
+            in_dex = self.QUICK_BOOL[False] if liquidity != "" else self.QUICK_BOOL[True]
             contract_verified = self.QUICK_REVERSE[data['data']['contract_Verified']] if data['data'].get(
                 'contract_Verified') is not None else f"{self.QUICK_REVERSE[False]}"
 
@@ -271,7 +271,7 @@ class GoPlusLabs:
         except Exception as e:
             return ""
 
-    async def get_message_analytic(self, data):
+    async def get_message_analytic(self, data, liquidity):
         try:
             if data.get('data') and data.get("data").get("is_honeypot"):
                 count = await self.check_get_message_analytic(data)
@@ -298,7 +298,7 @@ class GoPlusLabs:
                     f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
                 )
             else:
-                return await self.get_quick_message(data)
+                return await self.get_quick_message(data, liquidity=liquidity)
         except:
             return ""
 
@@ -332,6 +332,7 @@ class GoPlusLabs:
         try:
             for i in data["data"]["holders"]:
                 if i["is_locked"] == 1:
+                    print(i['is_locked'])
                     try:
                         days = await self.calculate_days_left(i["locked_detail"])
                         if days > 0:
@@ -424,6 +425,7 @@ class GoPlusLabs:
             liquidity = await add_commas_to_float(
                 round(float(data["full"]["attributes"]["reserve_in_usd"]), 2)
             )
+            print(liquidity)
             return f"<b>💰 Liquidity:</b> {liquidity} $\n"
         except:
             return ""
@@ -508,12 +510,10 @@ class GoPlusLabs:
 
     async def get_message(self, data, bot, address) -> str:
         ads, media = await ads_manager.get_ads(bot)
-        test = await self.get_message_analytic(data)
         age = await self.calculate_age(data)
         top_holders = await self.get_top_holders(data)
         pair = await self.get_pair(data)
         bot_info = await bot.get_me()
-        liquidity = await self.get_liquidity(data)
         marketcap = await self.get_marketcap(data)
         lp_locked = await self.get_lp_locked(data)
         buy_tax = await self.get_buy_tax(data)
@@ -523,6 +523,12 @@ class GoPlusLabs:
         pairing = await self.get_pairing(data)
         chain = await self.get_chain(data)
         dex_data = await self.get_dex_data(address)
+        liquidity = await self.get_liquidity(data)
+        try:
+            liquidity = f"<b>💰 Liquidity:</b> {dex_data['liquidity']['usd']} $\n"
+        except:
+            pass
+        test = await self.get_message_analytic(data, liquidity)
         # pprint(data['data'])
         if pair == "":
             try:
@@ -537,10 +543,6 @@ class GoPlusLabs:
             except:
                 name = data['base']['baseTokenName']
 
-        try:
-            liquidity = f"<b>💰 Liquidity:</b> {dex_data['liquidity']['usd']} $\n"
-        except:
-            pass
         try:
             liquidity_base = f"<b>🌊 Pooled {name}:</b> {await add_commas_to_float(dex_data['liquidity']['base'])}\n"
         except:
