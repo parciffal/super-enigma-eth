@@ -11,15 +11,16 @@ from app.tools.token_analitic.gopluslabs import get_link_keyboard
 
 router = Router()
 
+
 async def change_message(bot, progress_msg, msg, keyboard):
     await progress_msg.delete()
     try:
         await bot.delete_message(
-                        progress_msg.chat.id, progress_msg.message_id
-                    )
+            progress_msg.chat.id, progress_msg.message_id
+        )
     except Exception as e:
         logging.error(e)
-        
+
     if keyboard is None:
         await bot.send_message(
             text=msg,
@@ -31,15 +32,17 @@ async def change_message(bot, progress_msg, msg, keyboard):
             text=msg,
             chat_id=progress_msg.chat.id,
             reply_markup=keyb,
-            
+
         )
+
+
 @router.message(F.content_type.in_({ContentType.TEXT}))
 async def token_cmd_handler(message: Message, config: Config, bot: Bot):
     try:
         if message.text:
             if len(message.text) == 42 and message.text.startswith("0"):
                 address = message.text
-                
+
                 # progress_msg: Message = await message.answer("🔎0xS Analyz in progress🔍")
                 msg, keyboard, bot, progress_msg = await gopluslabs_manager.get_token_security(
                     message, address, bot

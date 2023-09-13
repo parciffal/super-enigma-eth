@@ -56,8 +56,8 @@ class AdsManager:
             if ads is not None:
                 links = await self.get_ads_links(ads)
                 msg = await self.ads_links_to_str(ads, links, bot)
-                msg += f'<a href="{ads.media}">&#8203;</a>'
-                return msg
+                media = f'<a href="{ads.media}">&#8203;</a>'
+                return msg, media
             else:
                 return ""
         except:

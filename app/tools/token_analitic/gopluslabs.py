@@ -507,7 +507,7 @@ class GoPlusLabs:
             return data
 
     async def get_message(self, data, bot, address) -> str:
-        ads = await ads_manager.get_ads(bot)
+        ads, media = await ads_manager.get_ads(bot)
         test = await self.get_message_analytic(data)
         age = await self.calculate_age(data)
         top_holders = await self.get_top_holders(data)
@@ -568,6 +568,7 @@ class GoPlusLabs:
             txns = ""
 
         message = (
+            f"{media}"
             f"@{bot_info.username} | "
             f"your 🔎 0XS RESULTS 🔍 for <b>{hd.code(name.upper())}</b> Token!\n"
             f"<b>🏷️ Name: </b> {hd.code(name)}\n"
