@@ -658,17 +658,23 @@ class GoPlusLabs:
         progress_msg = await bot.send_message(
             message.chat.id, text=f"🔎 0xS Analyzer on <b>{data['base']['platformName']}</b> in progress 🔍"
         )
-        if data['base'] is not None:
+        try:
             data = await self.get_gecko_full_info(address, data)
-            if data["base"]["identifier"] != "shibarium":
-                data = await self.get_token_security_info(data, address)
-            else:
-                data = await self.quickintel_audit(data, address)
+            try:
+                if data["base"]["identifier"] != "shibarium":
+                    data = await self.get_token_security_info(data, address)
+                else:
+                    data = await self.quickintel_audit(data, address)
+            except:
+                try:
+                    data = await self.get_token_security_info(data, address)
+                except:
+                    data = await self.quickintel_audit(data, address)
             keyboards = await self.get_button_links(data, address)
             msg = await self.get_message(data, bot, address)
             print("Response Time: ", time.time() - start)
             return msg, keyboards, bot, progress_msg
-        else:
+        except:
             msg = "📵  <b>Apologies, but the token you are inquiring about does not currently have adequate liquidity.  \nPlease try again later.</b>"
             keyboards = None
             print("Response Time: ", time.time() - start)
