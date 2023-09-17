@@ -39,20 +39,18 @@ async def base_info_tamplate() -> dict:
 
 
 async def shorten_number(number):
-    if number >= 1_000_000_000_000:  # Trillions
-        return f"{number / 1_000_000_000_000:.2f} <b>TR</b>"
-    elif number >= 1_000_000_000:  # Billions
-        return f"{number / 1_000_000_000:.2f} <b>B</b>"
-    elif number >= 1_000_000:
-        return f"{number/ 1_000_000:.2f} <b>M</b>"
-    else:
-        return str(number)
+    suffixes = ["", "K", "M", "B", "TR"]
+    suffix_index = 0
+
+    while number >= 1000 and suffix_index < len(suffixes) - 1:
+        suffix_index += 1
+        number /= 1000.0
+
+    return f"{number:.2f} {suffixes[suffix_index]}"
 
 
 async def add_commas_to_float(number):
-    # Format the number with commas
-    formatted_number = "{:,}".format(number)
-    return formatted_number
+    return "{:,}".format(number)
 
 
 class GoPlusLabs:
@@ -115,34 +113,56 @@ class GoPlusLabs:
 
         return parsed_data
 
+    async def get_token_base_info_dex(self, address) -> dict:
+        data = await self.get_dex_data(address)
+        if data:
+            template = await base_info_tamplate()
+            template["base"]["platformId"] = self.CHAINS[
+                data['chainId']
+            ]
+            template["base"]["platformName"] = data['chainId']
+            template["base"]["baseTokenName"] = data['baseToken']['name']
+            template["base"]["baseTokenSymbol"] = data['baseToken']["symbol"]
+            template["base"]["identifier"] = data['chainId']
+            return template
+        else:
+            return {"base": None}
+
     async def get_token_base_info(self, address) -> dict:
         url = await coinmarketcap("get_coinmarket_base_info", address)
         data = await self.aiohttp_get(url)
-        if data["status"]["error_code"] in [0, "0"]:
-            data["base"] = data["data"]["pairs"][0]
-            return data
-        else:
-            return {"base": None}
+        try:
+            if data["status"]["error_code"] in [0, "0"]:
+                data["base"] = data["data"]["pairs"][0]
+                print(2)
+                return data
+            else:
+                return await self.get_token_base_info_dex(address)
+        except:
+            return await self.get_token_base_info_dex(address)
 
     async def get_gecko_base_info(self, address) -> dict:
         url = await coinmarketcap("get_gecko_base_info", address)
         data = await self.aiohttp_get(url)
         template = await base_info_tamplate()
-        if data["data"]["attributes"]["pools"][0]:
-            try:
-                kl = data["data"]["attributes"]["pools"][0]
-                template["base"]["platformId"] = self.CHAINS[
-                    kl["network"]["identifier"]
-                ]
-                template["base"]["platformName"] = kl["network"]["name"]
-                template["base"]["baseTokenName"] = kl["tokens"][0]["name"]
-                template["base"]["baseTokenSymbol"] = kl["tokens"][0]["symbol"]
-                template["base"]["identifier"] = kl["network"]["identifier"]
-                return template
-            except:
-                data = await self.get_token_base_info(address)
-                return data
-        else:
+        try:
+            if data["data"]["attributes"]["pools"][0]:
+                try:
+                    kl = data["data"]["attributes"]["pools"][0]
+                    template["base"]["platformId"] = self.CHAINS[
+                        kl["network"]["identifier"]
+                    ]
+                    template["base"]["platformName"] = kl["network"]["name"]
+                    template["base"]["baseTokenName"] = kl["tokens"][0]["name"]
+                    template["base"]["baseTokenSymbol"] = kl["tokens"][0]["symbol"]
+                    template["base"]["identifier"] = kl["network"]["identifier"]
+                    return template
+                except:
+                    data = await self.get_token_base_info(address)
+                    return data
+            else:
+                return await self.get_token_base_info(address)
+        except:
             return await self.get_token_base_info(address)
 
     async def get_token_security_info(self, data: dict, address) -> dict:
