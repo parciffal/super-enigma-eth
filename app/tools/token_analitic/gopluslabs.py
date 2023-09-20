@@ -1,23 +1,18 @@
 from aiogram import Bot
-from aiogram.types import Message
-from aiogram.utils.markdown import link
 import aiohttp
 import json
 import time
 import locale
 from pprint import pprint
-import logging
 from datetime import datetime
 
 from aiogram.utils.text_decorations import html_decoration as hd
-from tortoise.fields import relational
 
-from app.db.models import GroupModel
 from app.tools.token_analitic.api_urls import gopluslabs, coinmarketcap, geckoterminal
 from app.tools.token_analitic.tools import LINKS
 from app.tools.advertize_manager import ads_manager
+from app.tools.token_analitic.dextool import DEXTOOL, DEXTOOL_EMOJI
 from app.keyboards.inline.rug_check_keyboard import get_link_keyboard
-
 
 async def base_info_tamplate() -> dict:
     return {
@@ -84,6 +79,8 @@ class GoPlusLabs:
         "harmony": "1666600000",
         "tron": "tron",
     }
+    DEXTOOL_CHAINS = DEXTOOL
+
     BOOL = {"1": False, "0": True}
     CH_BOOL = {"1": True, "0": False}
     MSG_BOOL = {"0": "✅", "1": "🚫"}
@@ -93,8 +90,9 @@ class GoPlusLabs:
 
     def __init__(self):
         self.session = aiohttp.ClientSession()
-        # Set the locale to the user's default locale
-        self.locale = locale.setlocale(locale.LC_ALL, "")
+
+    def __del__(self):
+        self.session.close()
 
     async def aiohttp_get(self, url, headers={}) -> dict:
         # start = time.time()
@@ -528,6 +526,40 @@ class GoPlusLabs:
         except:
             return data
 
+    async def get_dextool_links(self, data, address):
+        try:
+            headers = {
+                "accept": "application/json",
+                "X-API-Key": "0c9d8fbc4f0387fb10a5d24b907eeb0c"
+            }
+            chain = self.DEXTOOL_CHAINS.get(data['base']['platformName'].lower())
+            url = f"https://api.dextools.io/v1/token?chain={chain}&address={address}"
+            data_ls = await self.aiohttp_get(url, headers)
+            links = {key: value for key, value in data_ls['data']['links'].items() if value != ""}
+            if links:
+                data['social_links'] = links
+            return data
+        except:
+            return data
+
+    async def get_social_links(self, data, address):
+        try:
+            msg = "\n🌐 Social Media 🌐\n\n"
+            if not data.get("social_links"):
+                return ""
+            else:
+                social_links = data['social_links']
+                count = 0
+                for key, value in social_links.items():
+                    if count == 4:
+                        count = 0
+                        msg += "\n"
+                    msg += f"{hd.link(DEXTOOL_EMOJI[key], value)}  "
+                    count += 1
+                return msg+"\n"
+        except:
+            return ""
+
     async def get_message(self, data, bot, address) -> str:
         ads, media = await ads_manager.get_ads(bot)
         age = await self.calculate_age(data)
@@ -544,6 +576,7 @@ class GoPlusLabs:
         chain = await self.get_chain(data)
         dex_data = await self.get_dex_data(address)
         liquidity = await self.get_liquidity(data)
+        social_links = await self.get_social_links(data, address)
         try:
             liquidity = f"<b>💰 Liquidity:</b> {dex_data['liquidity']['usd']} $\n"
         except:
@@ -614,6 +647,7 @@ class GoPlusLabs:
             f"{txns}"
             f"{lp_locked}"
             f"{pair_created_at}"
+            f"{social_links}"
             f"\n{ads}"
         )
         return message
@@ -632,7 +666,7 @@ class GoPlusLabs:
             data['included'] = {}
         return data
 
-    async def get_button_links(self, data: dict, address: str) -> dict:
+    async def get_button_links(self, data: dict, address: str):
         keyboards = []
         links = LINKS[self.CHAINS[data["base"]["platformName"].lower()]]
         for key in links:
@@ -671,6 +705,7 @@ class GoPlusLabs:
                 except:
                     data = await self.quickintel_audit(data, address)
             keyboards = await self.get_button_links(data, address)
+            data = await self.get_dextool_links(data, address)
             msg = await self.get_message(data, bot, address)
             print("Response Time: ", time.time() - start)
             return msg, keyboards, bot, progress_msg

@@ -69,6 +69,7 @@ class ConfigApi:
 class ConfigScanApis:
     bscscan = ""
     ethscan = ""
+    dextool = ""
 
 
 @dataclass
