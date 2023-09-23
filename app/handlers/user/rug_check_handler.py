@@ -1,25 +1,22 @@
 from aiogram import Router, Bot, F
 from aiogram.types import Message, ContentType
 
-
+import pprint
 import logging
 
 
 from app.config import Config
-from app.tools.token_analitic import gopluslabs_manager
-from app.tools.token_analitic.gopluslabs import get_link_keyboard
+from app.tools.token_analitic.token_analyzer import token_analyzer, get_link_keyboard
 
 router = Router()
 
 
 async def change_message(bot, progress_msg, msg, keyboard):
     await progress_msg.delete()
-    try:
-        await bot.delete_message(
-            progress_msg.chat.id, progress_msg.message_id
-        )
-    except Exception as e:
-        logging.error(e)
+    # try:
+    #     await bot.delete_message(progress_msg.chat.id, progress_msg.message_id)
+    # except Exception as e:
+    #     logging.error(e)
 
     if keyboard is None:
         await bot.send_message(
@@ -32,7 +29,6 @@ async def change_message(bot, progress_msg, msg, keyboard):
             text=msg,
             chat_id=progress_msg.chat.id,
             reply_markup=keyb,
-
         )
 
 
@@ -44,8 +40,13 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                 address = message.text
 
                 # progress_msg: Message = await message.answer("🔎0xS Analyz in progress🔍")
-                msg, keyboard, bot, progress_msg = await gopluslabs_manager.get_token_security(
-                    message, address, bot
+                (
+                    msg,
+                    keyboard,
+                    bot,
+                    progress_msg,
+                ) = await token_analyzer.analyze(
+                    message, address, bot, config
                 )
                 await change_message(bot, progress_msg, msg, keyboard)
             elif message.text.startswith("0") and (

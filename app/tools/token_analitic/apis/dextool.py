@@ -1,3 +1,9 @@
+import aiohttp
+import json
+
+
+from app.tools.token_analitic.tools import base_info_tamplate
+
 DEXTOOL = {
     "alvey": "alvey",
     "aptos": "aptos",
@@ -99,3 +105,40 @@ DEXTOOL_EMOJI = {
     "website": "🌐 WebSite",
     "youtube": "🎥 YouTube",
 }
+
+
+class DexTool:
+    def __init__(self, session):
+        self.session = session
+
+    async def aiohttp_get(self, chain: str, address: str, url: str, dextool_key: str) -> dict:
+        headers = {
+            "accept": "application/json",
+            "X-API-Key": dextool_key
+        }
+
+        async with self.session.get(url, headers=headers) as response:
+            data = await response.text()
+        parsed_data = json.loads(data)
+        return parsed_data
+
+    async def aiohttp_post(self, url, headers, dt) -> dict:
+        async with self.session.post(url, headers=headers, json=dt) as response:
+            data = await response.text()
+        parsed_data = json.loads(data)
+
+        return parsed_data
+
+    async def analyze(self, address: str, data: dict, dextool_key: str) -> dict:
+        try:
+            if DEXTOOL.get(data['base']['platformName'].lower()) is not None:
+                chain = DEXTOOL.get(data['base']['platformName'].lower())
+                url = f"https://api.dextools.io/v1/token?chain={chain}&address={address}"
+                response = await self.aiohttp_get(chain, address, url, dextool_key)
+                links = {key: value for key,
+                         value in response['data']['links'].items() if value != ""}
+                if links:
+                    data['social_links'] = links
+            return data
+        except Exception as e:
+            return data

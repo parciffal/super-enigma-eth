@@ -12,4 +12,5 @@ toml
 tortoise-orm
 aerich
 asyncpg
+psycopg2
 watchdog

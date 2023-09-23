@@ -1,0 +1,3 @@
+CREATE DATABASE savebotdb;
+CREATE USER saveuser WITH PASSWORD 'Adm!LL';
+GRANT ALL PRIVILEGES ON DATABASE savebotdb TO saveuser;

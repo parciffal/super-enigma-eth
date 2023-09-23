@@ -9,43 +9,11 @@ from datetime import datetime
 from aiogram.utils.text_decorations import html_decoration as hd
 
 from app.tools.token_analitic.api_urls import gopluslabs, coinmarketcap, geckoterminal
-from app.tools.token_analitic.tools import LINKS
+from app.tools.token_analitic.tools import LINKS, base_info_tamplate, shorten_number, add_commas_to_float
 from app.tools.advertize_manager import ads_manager
-from app.tools.token_analitic.dextool import DEXTOOL, DEXTOOL_EMOJI
+from app.tools.token_analitic.apis.moralis import Moralis
+from app.tools.token_analitic.apis.dextool import DEXTOOL, DEXTOOL_EMOJI
 from app.keyboards.inline.rug_check_keyboard import get_link_keyboard
-
-async def base_info_tamplate() -> dict:
-    return {
-        "base": {
-            "platformId": "",
-            "platformName": "",
-            "baseTokenSymbol": "",
-            "quoteTokenSymbol": "",
-            "liquidity": "",
-            "pairContractAddress": "",
-            "platFormCryptoId": "",
-            "exchangeId": "",
-            "poolId": "",
-            "baseTokenName": "",
-            "identifier": "",
-            "creation_date": "",
-        }
-    }
-
-
-async def shorten_number(number):
-    suffixes = ["", "K", "M", "B", "TR"]
-    suffix_index = 0
-
-    while number >= 1000 and suffix_index < len(suffixes) - 1:
-        suffix_index += 1
-        number /= 1000.0
-
-    return f"{number:.2f} {suffixes[suffix_index]}"
-
-
-async def add_commas_to_float(number):
-    return "{:,}".format(number)
 
 
 class GoPlusLabs:
@@ -90,9 +58,10 @@ class GoPlusLabs:
 
     def __init__(self):
         self.session = aiohttp.ClientSession()
+        self.moralis = Moralis(self.session)
 
-    def __del__(self):
-        self.session.close()
+    async def __del__(self):
+        await self.session.close()
 
     async def aiohttp_get(self, url, headers={}) -> dict:
         # start = time.time()
@@ -178,86 +147,19 @@ class GoPlusLabs:
 
     #
     async def check_get_message_analytic(self, data) -> int:
-        count = 0
-        if (
-            self.BOOL[data["data"]["is_honeypot"]]
-            if data["data"].get("is_honeypot")
-            else None
-        ):
-            count += 1
-        if (
-            self.BOOL[data["data"]["is_mintable"]]
-            if data["data"].get("is_mintable")
-            else None
-        ):
-            count += 1
-        if (
-            self.BOOL[data["data"]["is_proxy"]]
-            if data["data"].get("is_proxy")
-            else None
-        ):
-            count += 1
-        if (
-            self.BOOL[data["data"]["is_blacklisted"]]
-            if data["data"].get("is_blacklisted")
-            else None
-        ):
-            count += 1
-        if (
-            self.CH_BOOL[data["data"]["is_in_dex"]]
-            if data["data"].get("is_in_dex")
-            else None
-        ):
-            count += 1
-        if (
-            self.CH_BOOL[data["data"]["is_open_source"]]
-            if data["data"].get("is_open_source")
-            else None
-        ):
-            count += 1
-
+        keys = ["is_honeypot", "is_mintable", "is_proxy",
+                "is_blacklisted", "is_in_dex", "is_open_source"]
+        count = sum(1 for key in keys
+                    if data["data"].get(key) and self.BOOL[data["data"][key]])
         return count
 
     async def check_quick_message(self, data, liquidity) -> int:
-        count = 0
-        try:
-            if (
-                data["data"]["is_Honeypot"] == False
-            ):
-                count += 1
-        except:
-            pass
-        try:
-            if (
-                data["data"]["is_Mintable"] == False
-            ):
-                count += 1
-        except:
-            pass
-        try:
-            if (
-                data["data"]["is_Proxy"] == False
-            ):
-                count += 1
-        except:
-            pass
-        try:
-            if (
-                data["data"]["can_Blacklist"] == False
-            ):
-                count += 1
-        except:
-            pass
-        try:
-            if (
-                data["data"]["contract_Verified"]
-            ):
-                count += 1
-        except:
-            pass
+        keys = ["is_Honeypot", "is_Mintable", "is_Proxy",
+                "can_Blacklist", "contract_Verified"]
+        count = sum(1 for key in keys
+                    if data["data"].get(key) is False)
         if liquidity != "":
             count += 1
-
         return count
 
     async def get_quick_message(self, data, liquidity):
@@ -532,10 +434,12 @@ class GoPlusLabs:
                 "accept": "application/json",
                 "X-API-Key": "0c9d8fbc4f0387fb10a5d24b907eeb0c"
             }
-            chain = self.DEXTOOL_CHAINS.get(data['base']['platformName'].lower())
+            chain = self.DEXTOOL_CHAINS.get(
+                data['base']['platformName'].lower())
             url = f"https://api.dextools.io/v1/token?chain={chain}&address={address}"
             data_ls = await self.aiohttp_get(url, headers)
-            links = {key: value for key, value in data_ls['data']['links'].items() if value != ""}
+            links = {key: value for key,
+                     value in data_ls['data']['links'].items() if value != ""}
             if links:
                 data['social_links'] = links
             return data
@@ -686,14 +590,34 @@ class GoPlusLabs:
             )
         return keyboards
 
-    async def get_token_security(self, message,  address: str, bot: Bot):
+    async def shibariumscan(self, address):
+        try:
+            data = await self.aiohttp_get(url=f"https://www.shibariumscan.io/api?module=token&action=getToken&contractaddress={address}")
+            template = await base_info_tamplate()
+            template["base"]["platformId"] = "shibarium"
+            template["base"]["platformName"] = "shibarium"
+            template["base"]["baseTokenName"] = data["result"]["name"]
+            template["base"]["baseTokenSymbol"] = data["result"]["symbol"]
+            template["base"]["identifier"] = "shibarium"
+            return template
+        except:
+            return {"base": None}
+
+    async def get_token_security(self, message,  address: str, bot: Bot, config):
         start = time.time()
         data = await self.get_gecko_base_info(address)
+        if data['base'] is None:
+            data = await self.moralis.analyze(token=address)
+            if data['base'] is None:
+                data = await self.shibariumscan(address)
         progress_msg = await bot.send_message(
             message.chat.id, text=f"🔎 0xS Analyzer on <b>{data['base']['platformName']}</b> in progress 🔍"
         )
         try:
-            data = await self.get_gecko_full_info(address, data)
+            try:
+                data = await self.get_gecko_full_info(address, data)
+            except:
+                pass
             try:
                 if data["base"]["identifier"] != "shibarium":
                     data = await self.get_token_security_info(data, address)
@@ -704,14 +628,21 @@ class GoPlusLabs:
                     data = await self.get_token_security_info(data, address)
                 except:
                     data = await self.quickintel_audit(data, address)
-            keyboards = await self.get_button_links(data, address)
-            data = await self.get_dextool_links(data, address)
+            try:
+                keyboards = await self.get_button_links(data, address)
+            except:
+                keyboards = []
+
+            try:
+                data = await self.get_dextool_links(data, address)
+            except:
+                pass
             msg = await self.get_message(data, bot, address)
             print("Response Time: ", time.time() - start)
             return msg, keyboards, bot, progress_msg
         except:
             msg = "📵  <b>Apologies, but the token you are inquiring about does not currently have adequate liquidity.  \nPlease try again later.</b>"
-            keyboards = None
+            keyboards = []
             print("Response Time: ", time.time() - start)
             return msg, keyboards, bot, progress_msg
 

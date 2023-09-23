@@ -34,6 +34,8 @@ location = "./migrations"
 src_folder = "./."
 
 [scanapis]
-bscscan = "SZEDQMEG3A7MMSPCQQK22KMTHXZRZEZ8BK"
-ethscan = "6BPFQFD84EPX6FANACNRDSUTD4SKR4MEIX"
-
+bscscan = ""
+ethscan = ""
+dextool = "0c9d8fbc4f0387fb10a5d24b907eeb0c"
+moralis = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjUwMGI5YjAxLTcwNjEtNDc1ZC1iYTc5LWRmMDAxOTZiOTYxOSIsIm9yZ0lkIjoiMzU4MDY2IiwidXNlcklkIjoiMzY3OTk3IiwidHlwZUlkIjoiYTc2ZjVjZDQtNzRhYy00MDQ1LWFkNDAtM2E4ODE4NzYyN2EzIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2OTUyMjA4OTgsImV4cCI6NDg1MDk4MDg5OH0.Zk2YXhScWTMBfzSSfM_P_Wbiy0dsPdGBL4ZuQxCye9c"
+quickintel = "0xs-KUen48jjdHV223ss"

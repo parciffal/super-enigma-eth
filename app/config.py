@@ -16,11 +16,11 @@ class ConfigDatabase:
     models: list[str]
     protocol: str = "sqlite"
     file_name: str = "production-database.sqlite3"
-    user: str = None
-    password: str = None
-    host: str = None
-    port: str = None
-    database_name: str = None
+    user: str = ""
+    password: str = ""
+    host: str = ""
+    port: str = ""
+    database_name: str = ""
 
     def get_db_url(self):
         if self.protocol == "sqlite":
@@ -67,9 +67,11 @@ class ConfigApi:
 
 @dataclass
 class ConfigScanApis:
-    bscscan = ""
-    ethscan = ""
-    dextool = ""
+    bscscan: str = ""
+    dextool: str = ""
+    ethscan: str = ""
+    moralis: str = ""
+    quickintel: str = ""
 
 
 @dataclass
@@ -88,7 +90,6 @@ class Config:
         for section in fields(cls):
             pre = {}
             current = data[section.name]
-
             for field in fields(section.type):
                 if field.name in current:
                     pre[field.name] = current[field.name]
@@ -99,7 +100,6 @@ class Config:
                         f"Missing field {field.name} in section {section.name}"
                     )
             sections[section.name] = section.type(**pre)
-
         return cls(**sections)
 
 
@@ -108,7 +108,8 @@ def parse_config(config_file: str) -> Config:
         config_file += ".toml"
 
     if not os.path.isfile(config_file):
-        raise FileNotFoundError(f"Config file not found: {config_file} no such file")
+        raise FileNotFoundError(
+            f"Config file not found: {config_file} no such file")
 
     with open(config_file, "r") as f:
         data = toml.load(f)

@@ -59,9 +59,9 @@ class AdsManager:
                 media = f'<a href="{ads.media}">&#8203;</a>'
                 return msg, media
             else:
-                return ""
+                return "", ""
         except:
-            return ""
+            return "", ""
 
 
 ads_manager = AdsManager()
