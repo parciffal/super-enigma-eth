@@ -102,7 +102,7 @@ DEXTOOL_EMOJI = {
     "telegram": "✉️ Telegram",
     "tiktok": "🎵 TikTok",
     "twitter": "🐦 Twitter",
-    "website": "🌐 WebSite",
+    "website": "🌐 Website",
     "youtube": "🎥 YouTube",
 }
 
@@ -111,11 +111,10 @@ class DexTool:
     def __init__(self, session):
         self.session = session
 
-    async def aiohttp_get(self, chain: str, address: str, url: str, dextool_key: str) -> dict:
-        headers = {
-            "accept": "application/json",
-            "X-API-Key": dextool_key
-        }
+    async def aiohttp_get(
+        self, chain: str, address: str, url: str, dextool_key: str
+    ) -> dict:
+        headers = {"accept": "application/json", "X-API-Key": dextool_key}
 
         async with self.session.get(url, headers=headers) as response:
             data = await response.text()
@@ -131,14 +130,19 @@ class DexTool:
 
     async def analyze(self, address: str, data: dict, dextool_key: str) -> dict:
         try:
-            if DEXTOOL.get(data['base']['platformName'].lower()) is not None:
-                chain = DEXTOOL.get(data['base']['platformName'].lower())
-                url = f"https://api.dextools.io/v1/token?chain={chain}&address={address}"
+            if DEXTOOL.get(data["base"]["platformName"].lower()) is not None:
+                chain = DEXTOOL.get(data["base"]["platformName"].lower())
+                url = (
+                    f"https://api.dextools.io/v1/token?chain={chain}&address={address}"
+                )
                 response = await self.aiohttp_get(chain, address, url, dextool_key)
-                links = {key: value for key,
-                         value in response['data']['links'].items() if value != ""}
+                links = {
+                    key: value
+                    for key, value in response["data"]["links"].items()
+                    if value != ""
+                }
                 if links:
-                    data['social_links'] = links
+                    data["social_links"] = links
             return data
         except Exception as e:
             return data

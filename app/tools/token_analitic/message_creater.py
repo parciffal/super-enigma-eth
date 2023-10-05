@@ -1,6 +1,7 @@
 from aiogram import Bot
 from aiogram.utils.text_decorations import html_decoration as hd
 from datetime import datetime
+from pprint import pprint
 
 from app.tools.advertize_manager import ads_manager
 from app.tools.token_analitic.apis import DEXTOOL, DEXTOOL_EMOJI
@@ -38,6 +39,34 @@ class MessageCreater:
         "harmony": "1666600000",
         "tron": "tron",
     }
+    CHAIN_FULL_NAMES = {
+        "ethereum": "Ethereum",
+        "eth": "Ethereum",
+        "shibarium": "Shibarium",
+        "Shibarium": "Shibarium",
+        "optimism": "Optimism",
+        "cronos": "Cronos",
+        "bsc": "Binance Smart Chain",
+        "bnb chain": "Binance Smart Chain",
+        "okc": "OKExChain",
+        "gnosis": "Gnosis Chain",
+        "heco": "Huobi Eco Chain",
+        "polygon": "Polygon",
+        "fantom": "Fantom",
+        "kcc": "KuCoin Community Chain",
+        "zksync era": "zkSync Era",
+        "zksync": "zkSync",
+        "ethw": "EtherLite",
+        "fon": "Ferrum Network",
+        "arbitrum": "Arbitrum",
+        "avalanche": "Avalanche",
+        "linea mainet": "Linea Mainnet",
+        "linea testnet": "Linea Testnet",
+        "base": "Basecoin",
+        "harmony": "Harmony",
+        "tron": "Tron",
+    }
+
     DEXTOOL_CHAINS = DEXTOOL
 
     BOOL = {"1": False, "0": True}
@@ -92,7 +121,7 @@ class MessageCreater:
                     'browserScan') != "" else None
                 pair = hd.link("View on Scan", url +
                                include['attributes']['quote_address'])
-                return f"<b>🔄 Pair: </b> {pair} \n"
+                return f"<b>🔄 Pair: </b>{pair} \n"
 
         try:
             address = data['dex']['quoteToken']['address']
@@ -110,7 +139,7 @@ class MessageCreater:
             except:
                 return ""
 
-        return f"<b>🔄 Pair: </b> {pair} \n"
+        return f"<b>🔄 Pair: </b>{pair} \n"
 
     async def get_marketcap(self, data):
         try:
@@ -142,11 +171,11 @@ class MessageCreater:
                     try:
                         days = await self.calculate_days_left(i["locked_detail"])
                         if days > 0:
-                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  for <b>{days} Days</b> \n"
+                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b>on <b>{i['tag']}</b>  for <b>{days} Days</b> \n"
                         else:
-                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>  <b>Expired for {-1*days} Days</b> \n"
+                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b>on <b>{i['tag']}</b>  <b>Expired for {-1*days} Days</b> \n"
                     except:
-                        return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b> on <b>{i['tag']}</b>\n"
+                        return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b>on <b>{i['tag']}</b>\n"
             return ""
         except:
             return ""
@@ -154,48 +183,49 @@ class MessageCreater:
     async def get_buy_tax(self, data):
         try:
             buy_tax = round(float(data['data']['buy_tax'])*100, 2)
-            msg = f"{buy_tax} %" if buy_tax else ' N\A '
-            return f"<b>💰 Buy Tax: </b> {msg}\n"
+            msg = f"{buy_tax} %" if buy_tax else 'N\A'
+            return f"<b>💰 Buy Tax: </b>{msg}\n"
         except:
             try:
                 buy_tax = data['data']['buy_Tax']
                 if buy_tax is None:
-                    return f"<b>💰 Buy Tax: </b> N\A \n"
-                msg = f"{buy_tax} %" if buy_tax else ' N\A '
-                return f"<b>💰 Buy Tax: </b> {msg}\n"
+                    return f"<b>💰 Buy Tax: </b>N\A\n"
+                msg = f"{buy_tax} %" if buy_tax else 'N\A'
+                return f"<b>💰 Buy Tax: </b>{msg}\n"
             except:
                 return ""
 
     async def get_sell_tax(self, data):
         try:
             sell_tax = round(float(data['data']['sell_tax'])*100, 2)
-            msg = f"{sell_tax} %" if sell_tax else ' N\A '
-            return f"<b>💸 Sell Tax: </b> {msg}\n"
+            msg = f"{sell_tax} %" if sell_tax else 'N\A'
+            return f"<b>💸 Sell Tax: </b>{msg}\n"
         except:
             try:
                 sell_tax = data['data']['sell_Tax']
-                msg = f"{sell_tax} %" if sell_tax else ' N\A '
-                return f"<b>💸 Sell Tax: </b> {msg}\n"
+                msg = f"{sell_tax} %" if sell_tax else 'N\A '
+                return f"<b>💸 Sell Tax: </b>{msg}\n"
             except:
                 return ""
 
     async def get_creator(self, data):
         try:
             creator = data['data']['creator_address']
-            return f"<b>🧑‍🎨 Creator:</b> {hd.code(creator)}\n"
+            return f"<b>🧑‍🎨 Creator: </b>{hd.code(creator)}\n"
         except:
             return ""
 
     async def get_owner(self, data):
         try:
             owner = data['data']['owner_address']
-            return f"<b>👤 Owner: </b> {hd.code(owner)}\n"
+            return f"<b>👤 Owner: </b>{hd.code(owner)}\n"
         except:
             return ""
 
     async def get_chain(self, data):
         try:
-            return f"<b>🌐 Chain:</b> {data['base']['platformName']}\n\n"
+            chain  = self.CHAIN_FULL_NAMES.get(data['base']['platformName'], data['base']['platformName'])
+            return f"<b>🌐 Chain: </b>{hd.code(chain)}\n\n"
         except:
             return ""
 
@@ -211,8 +241,8 @@ class MessageCreater:
 
     async def get_social_links(self, data):
         try:
-            msg = "\n🌐 Social Media 🌐\n\n"
-            if not data.get("social_links"):
+            msg = "\n🌐<b> Social Media </b>🌐\n\n"
+            if data.get("social_links") is None:
                 return ""
             else:
                 social_links = data['social_links']
@@ -227,21 +257,87 @@ class MessageCreater:
         except:
             return ""
 
-    #
     async def check_get_message_analytic(self, data) -> int:
-        keys = ["is_honeypot", "is_mintable", "is_proxy",
-                "is_blacklisted", "is_in_dex", "is_open_source"]
-        count = sum(1 for key in keys
-                    if data["data"].get(key) and self.BOOL[data["data"][key]])
+        count = 0
+        if (
+            self.BOOL[data["data"]["is_honeypot"]]
+            if data["data"].get("is_honeypot")
+            else None
+        ):
+            count += 1
+        if (
+            self.BOOL[data["data"]["is_mintable"]]
+            if data["data"].get("is_mintable")
+            else None
+        ):
+            count += 1
+        if (
+            self.BOOL[data["data"]["is_proxy"]]
+            if data["data"].get("is_proxy")
+            else None
+        ):
+            count += 1
+        if (
+            self.BOOL[data["data"]["is_blacklisted"]]
+            if data["data"].get("is_blacklisted")
+            else None
+        ):
+            count += 1
+        if (
+            self.CH_BOOL[data["data"]["is_in_dex"]]
+            if data["data"].get("is_in_dex")
+            else None
+        ):
+            count += 1
+        if (
+            self.CH_BOOL[data["data"]["is_open_source"]]
+            if data["data"].get("is_open_source")
+            else None
+        ):
+            count += 1
+
         return count
 
     async def check_quick_message(self, data, liquidity) -> int:
-        keys = ["is_Honeypot", "is_Mintable", "is_Proxy",
-                "can_Blacklist", "contract_Verified"]
-        count = sum(1 for key in keys
-                    if data["data"].get(key) is False)
+        count = 0
+        try:
+            if (
+                data["data"]["is_Honeypot"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["is_Mintable"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["is_Proxy"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["can_Blacklist"] == False
+            ):
+                count += 1
+        except:
+            pass
+        try:
+            if (
+                data["data"]["contract_Verified"]
+            ):
+                count += 1
+        except:
+            pass
         if liquidity != "":
             count += 1
+
         return count
 
     async def get_quick_message(self, data, liquidity):
@@ -262,15 +358,16 @@ class MessageCreater:
 
             return (
                 f"<b>🛡️Safety Test's</b>\n\n"
-                f"<b>🍯Honeypot: </b> {honey_pot}\n"
-                f"<b>🖨️Mintable: </b> {mintable}\n"
-                f"<b>🔄Proxy: </b> {proxy}\n"
-                f"<b>🚫Blacklisted: </b> {blacklisted}\n"
-                f"<b>📈In Dex: </b> {in_dex}\n"
-                f"<b>🌐Contract Verified: </b> {contract_verified}\n\n"
+                f"<b>🍯Honeypot: </b>{honey_pot}\n"
+                f"<b>🖨️Mintable: </b>{mintable}\n"
+                f"<b>🔄Proxy: </b>{proxy}\n"
+                f"<b>🚫Blacklisted: </b>{blacklisted}\n"
+                f"<b>📈In Dex: </b>{in_dex}\n"
+                f"<b>🌐Contract Verified: </b>{contract_verified}\n\n"
                 f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
             )
         except Exception as e:
+            print(e)
             return ""
 
     async def get_message_analytic(self, data, liquidity):
@@ -278,25 +375,25 @@ class MessageCreater:
             if data.get('data') and data.get("data").get("is_honeypot"):
                 count = await self.check_get_message_analytic(data)
                 honeypot = self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get(
-                    'is_honeypot') else f"<b>N/A </b> "
+                    'is_honeypot') else f"<b>N/A </b>"
                 mintable = self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get(
-                    'is_mintable') else f"<b>N/A </b> "
+                    'is_mintable') else f"<b>N/A </b>"
                 proxy = self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get(
-                    'is_proxy') else f"<b>N/A </b> "
+                    'is_proxy') else f"<b>N/A </b>"
                 blacklisted = self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get(
-                    'is_blacklisted') else f"<b>N/A </b> "
+                    'is_blacklisted') else f"<b>N/A </b>"
                 in_dex = self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get(
                     'is_in_dex') else f"{self.MSG_BOOL['1']}"
                 open_source = self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get(
                     'is_open_source') else f"{self.MSG_BOOL['1']}"
                 return (
                     f"<b>🛡️Safety Test's</b>\n\n"
-                    f"<b>🍯Honeypot: </b> {honeypot}\n"
-                    f"<b>🖨️Mintable: </b> {mintable}\n"
-                    f"<b>🔄Proxy: </b> {proxy}\n"
-                    f"<b>🚫Blacklisted: </b> {blacklisted}\n"
-                    f"<b>📈In Dex: </b> {in_dex}\n"
-                    f"<b>🌐Open Source: </b> {open_source}\n\n"
+                    f"<b>🍯Honeypot: </b>{honeypot}\n"
+                    f"<b>🖨️Mintable: </b>{mintable}\n"
+                    f"<b>🔄Proxy: </b>{proxy}\n"
+                    f"<b>🚫Blacklisted: </b>{blacklisted}\n"
+                    f"<b>📈In Dex: </b>{in_dex}\n"
+                    f"<b>🌐Open Source: </b>{open_source}\n\n"
                     f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
                 )
             else:
@@ -347,15 +444,15 @@ class MessageCreater:
 
     async def get_price_change(self, data):
         try:
-            return f"<b>📉 24H Price Change: </b> {data['dex']['priceChange']['h24']}%\n"
+            return f"<b>📉 24H Price Change:</b> {data['dex']['priceChange']['h24']}%\n"
         except:
             return ""
 
     async def get_txns(self, data):
         try:
             txns = f"📈 <b>24H Txns:</b>"
-            txns += f"\n       <b>|_🟢 Buy:</b> {data['dex']['txns']['h24']['buys']} "
-            txns += f"| <b>🔴 Sell:</b> {data['dex']['txns']['h24']['sells']}\n"
+            txns += f"\n       <b>|_🟢 Buy: </b>{data['dex']['txns']['h24']['buys']} "
+            txns += f"| <b>🔴 Sell: </b>{data['dex']['txns']['h24']['sells']}\n"
             return txns
         except:
             return ""
@@ -383,16 +480,29 @@ class MessageCreater:
         msg_data['price_change'] = await self.get_price_change(data)
         msg_data['txns'] = await self.get_txns(data)
         return msg_data
+    
+    async def market_data_section(self, msg_data: dict) -> str:
+        keys = ['pair', 'liquidity', 'liquidity_base', 'marketcap', 'price', 'price_change', "txns", 'lp_locked', 'pair_created_at']
+        section = ""
+        passed = False
+        for key in keys:
+            if msg_data.get(key) is not None and msg_data.get(key) != "":
+                passed = True
+                section += f"{msg_data[key]}"
+        if passed:
+            section = f"\n<b>💲 Market Data 💲</b>\n\n"+ section
+        return section
 
     async def create(self, address: str, data: dict, bot: Bot):
         bot_info = await bot.get_me()
         msg_data = await self.collect_info(address, data, bot)
+        market_data = await self.market_data_section(msg_data)
         message = (
             f"{msg_data['media']}"
             f"@{bot_info.username} | "
             f"your 🔎 0XS RESULTS 🔍 for <b>{hd.code(msg_data['name'].upper())}</b> Token!\n"
-            f"<b>🏷️ Name: </b> {hd.code(msg_data['name'])}\n"
-            f"<b>🔗 CA: </b> {hd.code(address)}\n"
+            f"<b>🏷️ Name: </b>{hd.code(msg_data['name'])}\n"
+            f"<b>🔗 CA: </b>{hd.code(address)}\n"
             f"{msg_data['chain']}"
             f"{msg_data['test']}"
             f"{msg_data['buy_tax']}"
@@ -401,16 +511,7 @@ class MessageCreater:
             f"{msg_data['owner']}"
             f"{msg_data['age']}"
             f"{msg_data['top_holders']}"
-            f"\n<b>💲 Market Data 💲</b>\n"
-            f"{msg_data['pair']}"
-            f"{msg_data['liquidity']}"
-            f"{msg_data['liquidity_base']}"
-            f"{msg_data['marketcap']}"
-            f"{msg_data['price']}"
-            f"{msg_data['price_change']}"
-            f"{msg_data['txns']}"
-            f"{msg_data['lp_locked']}"
-            f"{msg_data['pair_created_at']}"
+            f"{market_data}"
             f"{msg_data['social_links']}"
             f"\n{msg_data['ads']}"
         )
