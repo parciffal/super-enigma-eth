@@ -2,6 +2,7 @@ import pprint
 from aiogram import Bot, types
 import aiohttp
 import time
+import asyncio
 
 from app.config import Config
 
@@ -53,8 +54,11 @@ class TokenAnalyzer:
         self.dextool = DexTool(self.session)
         self.message = MessageCreater()
 
-    async def __del__(self):
-        await self.session.close()
+    def __del__(self):
+        async def close_session():
+            await self.session.close()
+
+        asyncio.run(close_session())
 
     async def get_button_links(self, data: dict, address: str):
         keyboards = []
@@ -62,44 +66,44 @@ class TokenAnalyzer:
         keys = {
             "geckoterminal": "🦎 Gecko",
             "dextools": "📈 Dex",
-            "browserScanAddress": "📡 Scan"
+            "browserScanAddress": "📡 Scan",
         }
         for key in links:
-            keyboards.append(
-                {
-                    "name": keys[key],
-                    "url": f"{links[key]}{address}"
-                }
-            )
+            keyboards.append({"name": keys[key], "url": f"{links[key]}{address}"})
         return keyboards
 
     async def get_base_data(self, address, moralis_key) -> dict:
         data = await self.geckotermianl.analyze(address)
-        if data['base'] is None:
+        if data["base"] is None:
             data = await self.coinmarketcup.analyze(address)
-        if data['base'] is None:
+        if data["base"] is None:
             data = await self.dexscreaner.analyze(address)
-        if data['base'] is None:
+        if data["base"] is None:
             data = await self.moralis.analyze(address, moralis_key)
-        if data['base'] is None:
+        if data["base"] is None:
             data = await self.shibarium.analyze(address)
         return data
 
-    async def get_analytic_data(self, address: str, data: dict, quickintel_key: str) -> dict:
+    async def get_analytic_data(
+        self, address: str, data: dict, quickintel_key: str
+    ) -> dict:
         data = await self.gopluslab.analyze(address, data)
-        if data.get('data') is None:
+        if data.get("data") is None:
             data = await self.quickintel.analyze(data, address, quickintel_key)
         return data
 
     async def send_progress_msg(self, message: types.Message, data: dict, bot: Bot):
-        chain = data['base']['platformName'] if data['base'].get(
-            "platformName") else "N\A"
+        chain = (
+            data["base"]["platformName"] if data["base"].get("platformName") else "N\A"
+        )
         progress_msg = await bot.send_message(
             message.chat.id, text=f"🔎 0xS Analyzer on <b>{chain}</b> in progress 🔍"
         )
         return progress_msg
 
-    async def analyze(self, message: types.Message, address: str, bot: Bot, config: Config):
+    async def analyze(
+        self, message: types.Message, address: str, bot: Bot, config: Config
+    ):
         moralis_key = config.scanapis.moralis
         dextool_key = config.scanapis.dextool
         quick_intel_key = config.scanapis.quickintel

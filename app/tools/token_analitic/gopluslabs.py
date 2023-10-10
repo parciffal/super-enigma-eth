@@ -60,9 +60,6 @@ class GoPlusLabs:
         self.session = aiohttp.ClientSession()
         self.moralis = Moralis(self.session)
 
-    async def __del__(self):
-        await self.session.close()
-
     async def aiohttp_get(self, url, headers={}) -> dict:
         # start = time.time()
         async with self.session.get(url, headers=headers) as response:

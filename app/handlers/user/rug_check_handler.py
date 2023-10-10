@@ -4,7 +4,7 @@ from aiogram.types import Message, ContentType
 import pprint
 import logging
 
-
+from app.filters.security_filter import security_decorator
 from app.config import Config
 from app.tools.token_analitic.token_analyzer import token_analyzer, get_link_keyboard
 
@@ -33,9 +33,11 @@ async def change_message(bot, progress_msg, msg, keyboard):
 
 
 @router.message(F.content_type.in_({ContentType.TEXT}))
-async def token_cmd_handler(message: Message, config: Config, bot: Bot):
+@security_decorator(group_id="-1001569965543")
+async def token_cmd_handler(message: Message, bot: Bot, config: Config):
     try:
         if message.text:
+            print(message.chat.id)
             if len(message.text) == 42 and message.text.startswith("0"):
                 address = message.text
 
@@ -45,9 +47,7 @@ async def token_cmd_handler(message: Message, config: Config, bot: Bot):
                     keyboard,
                     bot,
                     progress_msg,
-                ) = await token_analyzer.analyze(
-                    message, address, bot, config
-                )
+                ) = await token_analyzer.analyze(message, address, bot, config)
                 await change_message(bot, progress_msg, msg, keyboard)
             elif message.text.startswith("0") and (
                 len(message.text) < 42 or len(message.text) > 42
