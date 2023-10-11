@@ -6,7 +6,6 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.fsm.storage.memory import MemoryStorage
-from aiogram_dialog import DialogRegistry
 from pyrogram.client import Client
 
 from app import db
@@ -32,9 +31,7 @@ logging_config = {
 }
 
 
-async def on_startup(
-    dispatcher: Dispatcher, bot: Bot, config: Config, registry: DialogRegistry
-):
+async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
     register_middlewares(dp=dispatcher, config=config)
 
     dispatcher.include_router(get_handlers_router())
@@ -55,7 +52,8 @@ async def on_startup(
     }
 
     logging.debug(f"Groups Mode - {states[bot_info.can_join_groups]}")
-    logging.debug(f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
+    logging.debug(
+        f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
     logging.debug(f"Inline Mode - {states[bot_info.supports_inline_queries]}")
 
     logging.error("Bot started!")
@@ -95,9 +93,7 @@ async def main():
     dp.startup.register(on_startup)
     dp.shutdown.register(on_shutdown)
 
-    registry = DialogRegistry(dp)
-
-    context_kwargs = {"config": config, "registry": registry}
+    context_kwargs = {"config": config, "client": ""}
 
     if config.settings.use_pyrogram_client:
         pyrogram_client = Client(

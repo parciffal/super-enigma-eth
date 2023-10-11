@@ -1,35 +1,29 @@
 import aiohttp
-import json
-
-
-from app.tools.token_analitic.tools import base_info_tamplate
 
 
 class QuickIntel:
-    def __init__(self, session):
+
+    CHAIN = "eth"
+
+    def __init__(self, session: aiohttp.ClientSession):
         self.session = session
 
-    async def aiohttp_post(self, address, chain, data, quickintel_key) -> dict:
+    async def aiohttp_post(self, url: str, headers: dict, payload: dict) -> dict:
+        async with self.session.post(url, headers=headers, json=payload) as resp:
+            data = await resp.json()
+        return data
+
+    async def analyze(self, data: dict, token: str, quickintel_key: str):
         url = "https://qpi.quickintel.io/api/getthirdaudit"
 
         headers = {"api_key": quickintel_key,
                    "Content-Type": "application/json"}
         payload = {
-            "chain": chain,
-            "tokenAddress": address,
+            "chain": self.CHAIN,
+            "tokenAddress": token,
             "id": "0xs",
         }
-        async with self.session.post(url, headers=headers, json=payload) as resp:
-            data['data'] = await resp.json()
-        parsed_data = json.loads(data)
-
-        return parsed_data
-
-    async def analyze(self, data, token, quickintel_key):
         try:
-            chain = data['base']['identifier']
-            data['data'] = await self.aiohttp_post(token, chain, data, quickintel_key)
-        except:
-            pass
+            data['data'] = await self.aiohttp_post(url, headers, payload)
         finally:
             return data

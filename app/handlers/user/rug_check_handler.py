@@ -13,11 +13,6 @@ router = Router()
 
 async def change_message(bot, progress_msg, msg, keyboard):
     await progress_msg.delete()
-    # try:
-    #     await bot.delete_message(progress_msg.chat.id, progress_msg.message_id)
-    # except Exception as e:
-    #     logging.error(e)
-
     if keyboard is None:
         await bot.send_message(
             text=msg,
@@ -37,11 +32,8 @@ async def change_message(bot, progress_msg, msg, keyboard):
 async def token_cmd_handler(message: Message, bot: Bot, config: Config):
     try:
         if message.text:
-            print(message.chat.id)
             if len(message.text) == 42 and message.text.startswith("0"):
                 address = message.text
-
-                # progress_msg: Message = await message.answer("🔎0xS Analyz in progress🔍")
                 (
                     msg,
                     keyboard,
@@ -57,40 +49,45 @@ async def token_cmd_handler(message: Message, bot: Bot, config: Config):
                 )
             elif message.text == "🫂 Social Media":
                 msg = (
-                    f"🕊️ X: \nhttps://twitter.com/zeroxsai\n\n"
-                    f"🌐 Website: \nhttps://0xs.ai\n\n"
-                    f"✈️ Telegram: \nhttps://t.me/zeroxsai\n\n"
+                    "🕊️ X: \nhttps://twitter.com/zeroxsai\n\n"
+                    "🌐 Website: \nhttps://0xs.ai\n\n"
+                    "✈️  Telegram: \nhttps://t.me/zeroxsai\n\n"
                 )
                 await message.answer(msg)
             elif message.text == "💎 Advertisement":
-                msg = f"🗞️ Looking got good advertisement? 🗞️\n🚀 Get in touch with @Botindeed! 🚀"
+                msg = (
+                    "🗞️ Looking got good advertisement? 🗞️\n"
+                    "🚀 Get in touch with @Botindeed! 🚀"
+                )
                 await message.answer(msg)
             elif message.text == "⛓️ Chain Support":
                 msg = (
-                    f"⛓️ <b>Supported Chains</b> ⛓️\n\n"
-                    f"1. <b>Shibarium (SHIB) 🔗</b>\n"
-                    f"2. <b>Ethereum (ETH) 🔗</b>\n"
-                    f"3. <b>Binance Smart Chain (BSC) 🔗</b>\n"
-                    f"4. <b>Optimism (OL) 🔗</b>\n"
-                    f"5. <b>Cronos (CRONOS) 🔗</b>\n"
-                    f"6. <b>OKExChain (OKC) 🔗</b>\n"
-                    f"7. <b>Gnosis (GNOSIS) 🔗</b>\n"
-                    f"8. <b>Polygon (MATIC) 🔗</b>\n"
-                    f"9. <b>Fantom Opera (FTM) 🔗</b>\n"
-                    f"10. <b>zkSync (zkSYNC) 🔗</b>\n"
-                    f"11. <b>KCC (KCC) 🔗</b>\n"
-                    f"12. <b>Avalanche (AVAX) 🔗</b>\n"
-                    f"13. <b>Arbitrum (ARBITRUM) 🔗</b>\n"
-                    f"14. <b>Base (BASE) 🔗</b>\n"
-                    f"15. <b>Harmony (HARMONY) 🔗</b>\n"
-                    f"16. <b>Ethereum Wanchain (ETHW) 🔗</b>\n"
-                    f"16. <b>Ethereum Wanchain (ETHW) 🔗</b>\n"
-                    f"18. <b>Tron (TRON) 🔗</b>\n"
+                    "⛓️ <b>Supported Chains</b> ⛓️\n\n"
+                    "1. <b>Shibarium (SHIB) 🔗</b>\n"
+                    "2. <b>Ethereum (ETH) 🔗</b>\n"
+                    "3. <b>Binance Smart Chain (BSC) 🔗</b>\n"
+                    "4. <b>Optimism (OL) 🔗</b>\n"
+                    "5. <b>Cronos (CRONOS) 🔗</b>\n"
+                    "6. <b>OKExChain (OKC) 🔗</b>\n"
+                    "7. <b>Gnosis (GNOSIS) 🔗</b>\n"
+                    "8. <b>Polygon (MATIC) 🔗</b>\n"
+                    "9. <b>Fantom Opera (FTM) 🔗</b>\n"
+                    "10. <b>zkSync (zkSYNC) 🔗</b>\n"
+                    "11. <b>KCC (KCC) 🔗</b>\n"
+                    "12. <b>Avalanche (AVAX) 🔗</b>\n"
+                    "13. <b>Arbitrum (ARBITRUM) 🔗</b>\n"
+                    "14. <b>Base (BASE) 🔗</b>\n"
+                    "15. <b>Harmony (HARMONY) 🔗</b>\n"
+                    "16. <b>Ethereum Wanchain (ETHW) 🔗</b>\n"
+                    "16. <b>Ethereum Wanchain (ETHW) 🔗</b>\n"
+                    "18. <b>Tron (TRON) 🔗</b>\n"
                 )
                 await message.answer(msg)
 
     except Exception as e:
-        await message.answer(
-            "📵 <b> We're sorry, but the token you provided appears to be invalid or error appeared.\n Please try again later. </b>"
+        answer_msg = (
+            "📵 <b> We're sorry, but the token you provided appears"
+            " to be invalid or error appeared.\n Please try again later. </b>"
         )
+        await message.answer(answer_msg)
         logging.error(repr(e))

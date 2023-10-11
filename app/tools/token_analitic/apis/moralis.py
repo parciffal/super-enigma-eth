@@ -6,22 +6,12 @@ from app.tools.token_analitic.tools import base_info_tamplate
 
 
 class Moralis:
-    CHAIN_LIST = [
-        "eth",
-        "bsc",
-        "polygon",
-        "avalanche",
-        "fantom",
-        "cronos",
-        "arbitrum",
-        "goerli",
-        "sepolia",
-    ]
+    CHAIN = "eth"
 
-    def __init__(self, session):
+    def __init__(self, session: aiohttp.ClientSession):
         self.session = session
 
-    async def aiohttp_get(self, chain, address, moralis_key) -> dict:
+    async def aiohttp_get(self, chain: str, address: str, moralis_key: str) -> dict:
         headers = {
             "accept": "application/json",
             "X-API-Key": moralis_key,
@@ -29,27 +19,21 @@ class Moralis:
 
         url = f"https://deep-index.moralis.io/api/v2.2/erc20/metadata?chain={chain}&addresses%5B0%5D={address}"
         async with self.session.get(url, headers=headers) as response:
-            data = await response.text()
-        parsed_data = json.loads(data)
-        return parsed_data[0]
+            data = await response.json()
+        return data.get(0, {})
 
-    async def aiohttp_post(self, url, headers, dt) -> dict:
-        async with self.session.post(url, headers=headers, json=dt) as response:
-            data = await response.text()
-        parsed_data = json.loads(data)
-
-        return parsed_data
-
-    async def analyze(self, token, moralis_key):
-        for chain in self.CHAIN_LIST:
-            data = await self.aiohttp_get(chain, token, moralis_key)
-            if "" not in [data["name"], data["symbol"]]:
+    async def analyze(self, address: str, moralis_key: str) -> dict:
+        try:
+            data = await self.aiohttp_get(self.CHAIN, address, moralis_key)
+            print(data)
+            if "" not in [data["name"], data["symbol"]] and data:
                 template = await base_info_tamplate()
-                template["base"]["platformId"] = chain
-                template["base"]["platformName"] = chain
+                template["base"]["platformId"] = self.CHAIN
+                template["base"]["platformName"] = self.CHAIN
                 template["base"]["baseTokenName"] = data["name"]
                 template["base"]["baseTokenSymbol"] = data["symbol"]
-                template["base"]["identifier"] = chain
+                template["base"]["identifier"] = self.CHAIN
                 template["base"]["created_at"] = data["created_at"]
                 return template
-        return {"base": None}
+        finally:
+            return {"base": None}
