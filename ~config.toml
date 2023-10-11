@@ -1,0 +1,41 @@
+[bot]
+token = "1859541430:AAHRh--16dcPuXgAiVs6RlTKieOhQiYdkkw"
+
+[database]
+models = ["app.db.functions", "aerich.models"]
+protocol = "asyncpg"
+user = "saveuser"
+password = "Adm!LL2"
+host = "db"
+port = "5432"
+database_name = "savebotdb"
+
+[storage] # (Optional) Persistent FSM Storage for aiogram and aiogram_dialog, disabled by default
+use_persistent_storage = false # (Optional)
+# redis_url = "redis://user:password@host:port/db" # (Optional) Redis URL for FSM storage
+
+
+[settings]
+owner_id = 1534160164
+throttling_rate = 0.5
+use_webhook = false # (Optional)
+use_pyrogram_client = false
+drop_pending_updates = false
+
+[api] # API app settings for Pyrogram Client
+# Default values are from Telegram Desktop Client (t.me/durovleaks/108)
+# id = 2040 # (Optional) App ID
+# hash = "b18441a1ff607e10a989891a5462e627" # (Optional) App hash
+# bot_api_url = "https://api.telegram.org" # (Optional) Bot API URL
+
+[tool.aerich]
+tortoise_orm = "app.db.models"
+location = "./migrations"
+src_folder = "./."
+
+[scanapis]
+bscscan = ""
+ethscan = ""
+dextool = "0c9d8fbc4f0387fb10a5d24b907eeb0c"
+moralis = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJub25jZSI6IjUwMGI5YjAxLTcwNjEtNDc1ZC1iYTc5LWRmMDAxOTZiOTYxOSIsIm9yZ0lkIjoiMzU4MDY2IiwidXNlcklkIjoiMzY3OTk3IiwidHlwZUlkIjoiYTc2ZjVjZDQtNzRhYy00MDQ1LWFkNDAtM2E4ODE4NzYyN2EzIiwidHlwZSI6IlBST0pFQ1QiLCJpYXQiOjE2OTUyMjA4OTgsImV4cCI6NDg1MDk4MDg5OH0.Zk2YXhScWTMBfzSSfM_P_Wbiy0dsPdGBL4ZuQxCye9c"
+quickintel = "0xs-KUen48jjdHV223ss"
