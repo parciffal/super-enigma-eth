@@ -26,8 +26,7 @@ DEXTOOL_EMOJI = {
 
 
 class DexTool:
-
-    CHAIN: str = "ethereum"
+    CHAIN: str = "ether"
 
     def __init__(self, session):
         self.session = session
@@ -35,19 +34,21 @@ class DexTool:
     async def aiohttp_get(self, url: str, dextool_key: str) -> Dict[str, Any]:
         headers = {"accept": "application/json", "X-API-Key": dextool_key}
         async with self.session.get(url, headers=headers) as response:
-            return await response.json()
+            data = await response.json()
+        from pprint import pprint
+
+        print("DexTool")
+        pprint(data)
+        return data
 
     async def analyze(self, address: str, data: dict, dextool_key: str) -> dict:
         try:
-            url = f"https://api.dextools.io/v1/token?chain={self.CHAIN}&address={address}"
+            url = (
+                f"https://api.dextools.io/v1/token?chain={self.CHAIN}&address={address}"
+            )
             response = await self.aiohttp_get(url, dextool_key)
-            links = {
-                key: value
-                for key, value in response["data"]["links"].items()
-                if value != ""
-            }
-            if links:
-                data["social_links"] = links
+            data["dexscreaner"] = response
             return data
         except Exception as e:
+            data['dexscreaner'] = None
             return data

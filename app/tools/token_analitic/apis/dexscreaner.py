@@ -1,7 +1,7 @@
+from pprint import pprint
 from typing import Dict, Any
 
 import aiohttp
-import json
 
 
 from app.tools.token_analitic.tools import base_info_tamplate
@@ -17,20 +17,18 @@ class DexScreaner:
         async with self.session.get(
             url,
         ) as response:
-            data = await response.text()
-        parsed_data = json.loads(data)
-        return parsed_data
+            data = await response.json()
+        return data
 
     async def get_full_info(self, address: str, data: Dict[str, Any]) -> Dict[str, Any]:
         try:
             url = f"https://api.dexscreener.com/latest/dex/search?q={address}"
             response = await self.aiohttp_get(url)
-            data["dex"] = response["pairs"][0]
+            data["dexscreener"] = response["pairs"][0]
         finally:
             return data
 
     async def analyze(self, address: str) -> Dict[str, Any]:
-
         url = f"https://api.dexscreener.com/latest/dex/search?q={address}"
 
         data = await self.aiohttp_get(url)

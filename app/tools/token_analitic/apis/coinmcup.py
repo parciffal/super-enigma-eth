@@ -1,3 +1,4 @@
+from pprint import pprint
 import aiohttp
 
 from app.tools.token_analitic.api_urls import coinmarketcap
@@ -10,6 +11,8 @@ class CoinMarketCup:
     async def aiohttp_get(self, url: str) -> dict:
         async with self.session.get(url) as response:
             data = await response.json()
+        print("Coin")
+        pprint(data)
         return data
 
     async def analyze(self, address: str) -> dict:

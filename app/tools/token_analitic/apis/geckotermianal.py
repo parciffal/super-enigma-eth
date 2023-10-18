@@ -1,7 +1,6 @@
 from typing import Dict, Any
 
 import aiohttp
-import json
 
 
 from app.tools.token_analitic.tools import base_info_tamplate
@@ -16,22 +15,23 @@ class GeckoTermianl:
 
     async def aiohttp_get(self, url: str) -> Dict[str, Any]:
         async with self.session.get(url) as response:
-            data = await response.text()
-        parsed_data: Dict[str, Any] = json.loads(data)
-        return parsed_data
+            data = await response.json()
+        return data
 
     async def analyze_full(self, address: str, data: Dict[str, Any]) -> Dict[str, Any]:
         try:
-            url = await geckoterminal("get_full_info", data["base"]["identifier"], address)
+            url = await geckoterminal(
+                "get_full_info", data["base"]["identifier"], address
+            )
             response: Dict[str, Any] = await self.aiohttp_get(url)
             if response.get("links"):
                 response = await self.aiohttp_get(response["links"]["top_pool"])
             if response.get("data"):
                 data["full"] = response["data"]
             if response.get("included"):
-                data['included'] = response['included']
+                data["included"] = response["included"]
             else:
-                data['included'] = {}
+                data["included"] = {}
             return data
         except:
             return data

@@ -94,7 +94,10 @@ class MessageCreater:
                         txt = hd.link(percent, url+holder['address'])
                     else:
                         txt = str(round(float(holder['percent'])*100))+"%"
-                    msg += f"{txt} |"
+                    if msg != "<b>📊 Top Holders: </b>":
+                        msg += f" | {txt}" 
+                    else:
+                        msg += f"{txt}"
                 return msg+"\n"
         return ""
 
@@ -224,7 +227,8 @@ class MessageCreater:
 
     async def get_chain(self, data):
         try:
-            chain  = self.CHAIN_FULL_NAMES.get(data['base']['platformName'], data['base']['platformName'])
+            chain = self.CHAIN_FULL_NAMES.get(
+                data['base']['platformName'], data['base']['platformName'])
             return f"<b>🌐 Chain: </b>{hd.code(chain)}\n\n"
         except:
             return ""
@@ -343,7 +347,7 @@ class MessageCreater:
     async def get_quick_message(self, data, liquidity):
         try:
             count = await self.check_quick_message(data, liquidity)
-            honey_pot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get(
+            honeypot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get(
                 'is_Honeypot') is not None else f"<b>N/A</b>"
             mintable = self.QUICK_BOOL[data['data']['is_Mintable']] if data['data'].get(
                 'is_Mintable') is not None else f"<b>N/A</b>"
@@ -357,14 +361,13 @@ class MessageCreater:
                 'contract_Verified') is not None else f"{self.QUICK_REVERSE[False]}"
 
             return (
-                f"<b>🛡️Safety Test's</b>\n\n"
-                f"<b>🍯Honeypot: </b>{honey_pot}\n"
-                f"<b>🖨️Mintable: </b>{mintable}\n"
-                f"<b>🔄Proxy: </b>{proxy}\n"
-                f"<b>🚫Blacklisted: </b>{blacklisted}\n"
-                f"<b>📈In Dex: </b>{in_dex}\n"
-                f"<b>🌐Contract Verified: </b>{contract_verified}\n\n"
-                f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
+                f"<b>Contract Verified: {count}/6\n</b>\n\n"
+                f"<b>|-Honeypot: </b>{honeypot}\n"
+                f"<b>|-Mintable: </b>{mintable}\n"
+                f"<b>|-Proxy: </b>{proxy}\n"
+                f"<b>|-Blacklisted: </b>{blacklisted}\n"
+                f"<b>|-In Dex: </b>{in_dex}\n"
+                f"<b>|-Contract Verified: </b>{contract_verified}\n\n"
             )
         except Exception as e:
             print(e)
@@ -387,15 +390,13 @@ class MessageCreater:
                 open_source = self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get(
                     'is_open_source') else f"{self.MSG_BOOL['1']}"
                 return (
-                    f"<b>🛡️Safety Test's</b>\n\n"
-                    f"<b>🍯Honeypot: </b>{honeypot}\n"
-                    f"<b>🖨️Mintable: </b>{mintable}\n"
-                    f"<b>🔄Proxy: </b>{proxy}\n"
-                    f"<b>🚫Blacklisted: </b>{blacklisted}\n"
-                    f"<b>📈In Dex: </b>{in_dex}\n"
-                    f"<b>🌐Open Source: </b>{open_source}\n\n"
-                    f"🧪 <b>{count}/6 Test's passed</b> 🧪\n\n"
-                )
+                    f"<b>Contract Verified: {count}/6</b>\n"
+                    f"<b>|-Honeypot: </b>{honeypot}\n"
+                    f"<b>|-Mintable: </b>{mintable}\n"
+                    f"<b>|-Proxy: </b>{proxy}\n"
+                    f"<b>|-Blacklisted: </b>{blacklisted}\n"
+                    f"<b>|-In Dex: </b>{in_dex}\n"
+                    f"<b>|-Open Source: </b>{open_source}\n\n")
             else:
                 return await self.get_quick_message(data, liquidity=liquidity)
         except:
@@ -480,17 +481,18 @@ class MessageCreater:
         msg_data['price_change'] = await self.get_price_change(data)
         msg_data['txns'] = await self.get_txns(data)
         return msg_data
-    
+
     async def market_data_section(self, msg_data: dict) -> str:
-        keys = ['pair', 'liquidity', 'liquidity_base', 'marketcap', 'price', 'price_change', "txns", 'lp_locked', 'pair_created_at']
-        section = ""
+        keys = ['pair', 'liquidity', 'liquidity_base', 'marketcap',
+                'price', 'price_change', "txns", 'lp_locked', 'pair_created_at']
+        section = "\n"
         passed = False
         for key in keys:
             if msg_data.get(key) is not None and msg_data.get(key) != "":
                 passed = True
                 section += f"{msg_data[key]}"
         if passed:
-            section = f"\n<b>💲 Market Data 💲</b>\n\n"+ section
+            section = section +"\n"
         return section
 
     async def create(self, address: str, data: dict, bot: Bot):
@@ -501,18 +503,43 @@ class MessageCreater:
             f"{msg_data['media']}"
             f"@{bot_info.username} | "
             f"your 🔎 0XS RESULTS 🔍 for <b>{hd.code(msg_data['name'].upper())}</b> Token!\n"
-            f"<b>🏷️ Name: </b>{hd.code(msg_data['name'])}\n"
-            f"<b>🔗 CA: </b>{hd.code(address)}\n"
-            f"{msg_data['chain']}"
-            f"{msg_data['test']}"
-            f"{msg_data['buy_tax']}"
-            f"{msg_data['sell_tax']}"
-            f"{msg_data['creator']}"
-            f"{msg_data['owner']}"
-            f"{msg_data['age']}"
-            f"{msg_data['top_holders']}"
             f"{market_data}"
+            f"<b>🏷️ Name: </b>{hd.code(msg_data['name'])}\n"
+            f"<b>➡️ Contract Address: </b>{hd.code(address)}\n\n"
+            f"{msg_data['test']}"
+            f"{msg_data['creator']}"
+            f"{msg_data['top_holders']}"
             f"{msg_data['social_links']}"
             f"\n{msg_data['ads']}"
         )
         return message
+    
+    async def message_creater(self, data: dict):
+        message_template = (
+            f"{data['token']['tokenName']} ({data['token']['tokenSymbol']}) burned 100.00% liquidity!🔥 |"
+            f" TX (https://etherscan.io/tx/{data['token']['hash']})"
+            "💰 MC: $9,076.00"
+            "🌊 LP: $7,226.02"
+            "💳 Taxes B/S: 8% / 17%"
+            "⏳ 24h-Vol: $2,178.37"
+            "🕔 Age: 0 days 1 hours 10 minutes"
+            "🔫 Snipers: None"
+            "➡️ Contract Address: 0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27"
+            "Contract Verified: ✅"
+            "|- External calls: ✅"
+            "|- Renounced: ❌ Not yet. Scan again?"
+            "|- Hidden owner: No"
+            "|- Is Mintable: No"
+            "|- Blacklist function: ✅ No"
+            "|- Whitelist function: ❌ Found wl"
+            "|- Proxy contract: No"
+            "|- Honeypot: ✅ Not at this time"
+            "⚖️Top holders: 1. 1.97% | 2. 1.96% | 3. 1.88% | 4. 1.84% | 5. 1.58%"
+            "⚖️Deployer balance: 1.20 ETH |"
+            " Verify (https://etherscan.io/address/0x95a463a8c9d446afc1bb4d6c2629ba4180146ba0)"
+            "Socials:"
+            "DexT (https://www.dextools.io/app/en/ether/pair-explorer/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27) |"
+            " DexS (https://dexscreener.com/ethereum/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27) "
+            "| Contract (https://etherscan.io/token/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27) |"
+            " Holders (https://etherscan.io/token/tokenholderchart/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27)"
+        )

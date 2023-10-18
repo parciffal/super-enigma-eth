@@ -1,0 +1,11 @@
+burned -> ?
+TX -> etherscan + address
+MC - > ?
+LP -> ?
+Taxes B/S -> ?
+24h-vol -> dexscreener
+age -> dexscreener, 
+
+Topholders -> GoPlus
+Deployer balance -> ? deployer address have need to get balance
+

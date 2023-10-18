@@ -15,7 +15,7 @@ from app.db import close_orm, init_orm
 from app.handlers import get_handlers_router
 from app.middlewares import register_middlewares
 from app.commands import remove_bot_commands, setup_bot_commands
-
+from app.tools.burndetector.burn_detector import BurnDetector
 
 logging_config = {
     "version": 1,
@@ -35,7 +35,6 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
     register_middlewares(dp=dispatcher, config=config)
 
     dispatcher.include_router(get_handlers_router())
-
     await setup_bot_commands(bot, config)
 
     tortoise_config = config.database.get_tortoise_config()
@@ -46,14 +45,22 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
     logging.info(f"Username - @{bot_info.username}")
     logging.info(f"ID - {bot_info.id}")
 
+    burn_detector = BurnDetector(api_key=config.scanapis.ethscan, bot=bot)
+    burn_detector_1 = BurnDetector(
+        api_key=config.scanapis.ethscan,
+        target_address="0x0000000000000000000000000000000000000000",
+        bot=bot,
+    )
+    asyncio.create_task(burn_detector.start_burning())
+    asyncio.create_task(burn_detector_1.start_burning())
+
     states = {
         True: "Enabled",
         False: "Disabled",
     }
 
     logging.debug(f"Groups Mode - {states[bot_info.can_join_groups]}")
-    logging.debug(
-        f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
+    logging.debug(f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
     logging.debug(f"Inline Mode - {states[bot_info.supports_inline_queries]}")
 
     logging.error("Bot started!")

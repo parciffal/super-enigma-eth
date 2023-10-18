@@ -2,36 +2,34 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from app.utils.cb_data.admin.group_cb import GroupActions, GroupCB
 from app.utils.cb_data.admin.menu_cb import AdminMenuActions, AdminMenuCB
-from app.db.models import GroupModel, ChatChain
+from app.db.models import GroupModel
 
 
 async def edit_chain_kb(group_id) -> InlineKeyboardMarkup:
     buttons = []
-    for i in ChatChain:
-        print(i)
-        buttons.append(
-            InlineKeyboardButton(
-                text=i.value,
-                callback_data=GroupCB(
-                    action=GroupActions.CHANGE_CHAIN, group_id=group_id, chain=i.value
-                ).pack(),
-            )
+    group = GroupModel.get(id=group_id)
+    buttons.append(
+        InlineKeyboardButton(
+            text=group.name,
+            callback_data=GroupCB(
+                action=GroupActions.CHANGE_CHAIN, group_id=group_id, chain=""
+            ).pack(),
         )
+    )
     return InlineKeyboardMarkup(inline_keyboard=[buttons])
 
 
 async def chain_kb(group_id) -> InlineKeyboardMarkup:
     buttons = []
-    for i in ChatChain:
-        print(i)
-        buttons.append(
-            InlineKeyboardButton(
-                text=i.value,
-                callback_data=GroupCB(
-                    action=GroupActions.SET_CHAIN, group_id=group_id, chain=i.value
-                ).pack(),
-            )
+    group = GroupModel.get(id=group_id)
+    buttons.append(
+        InlineKeyboardButton(
+            text=group.name,
+            callback_data=GroupCB(
+                action=GroupActions.SET_CHAIN, group_id=group_id, chain=""
+            ).pack(),
         )
+    )
     return InlineKeyboardMarkup(inline_keyboard=[buttons])
 
 
@@ -82,7 +80,7 @@ async def get_all_groups(groups: list[GroupModel]) -> InlineKeyboardMarkup:
         buttons.append(
             [
                 InlineKeyboardButton(
-                    text=group.title,
+                    text=group.name,
                     callback_data=GroupCB(
                         action=GroupActions.VIEW, group_id=group.telegram_id, chain=""
                     ).pack(),

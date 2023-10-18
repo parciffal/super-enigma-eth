@@ -84,7 +84,6 @@ class TokenAnalyzer:
         self, message: types.Message, address: str, bot: Bot, config: Config
     ):
         eth_key = config.scanapis.ethscan
-        print(eth_key)
         moralis_key = config.scanapis.moralis
         dextool_key = config.scanapis.dextool
         quick_intel_key = config.scanapis.quickintel
