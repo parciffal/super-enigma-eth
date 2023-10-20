@@ -1,5 +1,6 @@
 import aiohttp
 from app.tools.token_analitic.api_urls import gopluslabs
+import json
 
 
 class GoPlus:
@@ -13,9 +14,10 @@ class GoPlus:
         async with self.session.get(
             url,
         ) as response:
-            data = await response.json()
-
-        return data
+            data = await response.text()
+        parsed_data = json.loads(data)
+        # print(time.time() - start)
+        return parsed_data
 
     async def analyze(self, address: str, data: dict) -> dict:
         try:
@@ -26,7 +28,7 @@ class GoPlus:
             )
             response = await self.aiohttp_get(url)
             if response["result"][address.lower()]:
-                data["golpus"] = response["result"][address.lower()]
+                data["goplus"] = response["result"][address.lower()]
             else:
                 data["goplus"] = None
             return data

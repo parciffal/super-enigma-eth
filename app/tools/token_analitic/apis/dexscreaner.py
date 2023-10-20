@@ -1,6 +1,6 @@
 from pprint import pprint
 from typing import Dict, Any
-
+import json
 import aiohttp
 
 
@@ -17,8 +17,10 @@ class DexScreaner:
         async with self.session.get(
             url,
         ) as response:
-            data = await response.json()
-        return data
+            data = await response.text()
+        parsed_data = json.loads(data)
+        # print(time.time() - start)
+        return parsed_data
 
     async def get_full_info(self, address: str, data: Dict[str, Any]) -> Dict[str, Any]:
         try:
@@ -28,21 +30,11 @@ class DexScreaner:
         finally:
             return data
 
-    async def analyze(self, address: str) -> Dict[str, Any]:
+    async def analyze(self, address: str):
         url = f"https://api.dexscreener.com/latest/dex/search?q={address}"
-
-        data = await self.aiohttp_get(url)
-        print(data)
-        pairs = data.get("pairs", [])
-        if pairs:
-            pair = pairs[0]
-            if pair["chainId"] == self.ETH_CHAIN_ID:
-                template = await base_info_tamplate()
-                template["base"]["platformId"] = self.ETH_CHAIN_ID
-                template["base"]["platformName"] = pair["chainId"]
-                template["base"]["baseTokenName"] = pair["baseToken"]["name"]
-                template["base"]["baseTokenSymbol"] = pair["baseToken"]["symbol"]
-                template["base"]["identifier"] = pair["chainId"]
-                return template
-
-        return {"base": None}
+        try:
+            response = await self.aiohttp_get(url)
+            data = response["pairs"][0]
+            return data
+        except:
+            return None

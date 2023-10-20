@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.fsm.storage.memory import MemoryStorage
+from logging.config import DictConfigurator
 from pyrogram.client import Client
 
 from app import db
@@ -17,18 +18,25 @@ from app.middlewares import register_middlewares
 from app.commands import remove_bot_commands, setup_bot_commands
 from app.tools.burndetector.burn_detector import BurnDetector
 
-logging_config = {
+logging_config = DictConfigurator({
     "version": 1,
-    "formatters": {"standard": {"format": "%(asctime)s - %(message)s"}},
+    "formatters": {
+        "standard": {
+            "format": "%(asctime)s - %(message)s"
+        }
+    },
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
             "formatter": "standard",
-            "level": "INFO",
+            "level": "INFO"
         }
     },
-    "root": {"handlers": ["console"], "level": "INFO"},
-}
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO"
+    }
+})
 
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
@@ -45,23 +53,19 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
     logging.info(f"Username - @{bot_info.username}")
     logging.info(f"ID - {bot_info.id}")
 
-    burn_detector = BurnDetector(api_key=config.scanapis.ethscan, bot=bot)
-    burn_detector_1 = BurnDetector(
-        api_key=config.scanapis.ethscan,
-        target_address="0x0000000000000000000000000000000000000000",
-        bot=bot,
-    )
+    burn_detector = BurnDetector(bot=bot, config=config)
     asyncio.create_task(burn_detector.start_burning())
-    asyncio.create_task(burn_detector_1.start_burning())
 
     states = {
         True: "Enabled",
         False: "Disabled",
     }
 
-    logging.debug(f"Groups Mode - {states[bot_info.can_join_groups]}")
-    logging.debug(f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
-    logging.debug(f"Inline Mode - {states[bot_info.supports_inline_queries]}")
+    logging.debug(f"Groups Mode - {states.get(bot_info.can_join_groups)}")
+    logging.debug(
+        f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
+    logging.debug(
+        f"Inline Mode - {states.get(bot_info.supports_inline_queries)}")
 
     logging.error("Bot started!")
 
@@ -77,6 +81,7 @@ async def on_shutdown(dispatcher: Dispatcher, bot: Bot, config: Config):
 
 async def main():
     coloredlogs.install(level=logging.INFO)
+    logging_config.configure()
     logging.warning("Starting bot...")
 
     arguments = parse_arguments()

@@ -4,7 +4,9 @@ from aiogram.types import BotCommand, BotCommandScopeChat, BotCommandScopeDefaul
 from app.config import Config
 
 users_commands = {"start": "Get info about bot",
-                  "help": "Get keyboard info "}
+                  "help": "Get keyboard info ",
+                  "autodetect": "On/Off autodetect",
+                  "detect": "Send /detect address"}
 
 # owner_commands = {**users_commands, "ping": "Check bot ping", "stats": "Show bot stats"}
 
@@ -23,13 +25,13 @@ async def setup_bot_commands(bot: Bot, config: Config):
             BotCommand(command=command, description=description)
             for command, description in users_commands.items()
         ],
-        scope=BotCommandScopeDefault(),
+        scope=BotCommandScopeDefault(type="default"),
     )
     pass
 
 
 async def remove_bot_commands(bot: Bot, config: Config):
-    await bot.delete_my_commands(scope=BotCommandScopeDefault())
+    await bot.delete_my_commands(scope=BotCommandScopeDefault(type="default"))
     # await bot.delete_my_commands(
     #     scope=BotCommandScopeChat(chat_id=config.settings.owner_id)
     # )

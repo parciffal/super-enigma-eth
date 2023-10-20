@@ -23,7 +23,7 @@ async def migrate_models(tortoise_config: dict):
 
 async def init_orm(tortoise_config: dict) -> None:
     await Tortoise.init(config=tortoise_config)
-    logging.info(f"Tortoise-ORM started, {Tortoise.apps}")
+    logging.info(f"Tortoise-ORM started")
 
 
 async def close_orm() -> None:

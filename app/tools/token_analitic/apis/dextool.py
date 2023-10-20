@@ -1,4 +1,5 @@
 from typing import Dict, Any
+import json
 
 DEXTOOL = {
     "etc": "etc",
@@ -9,19 +10,19 @@ DEXTOOL = {
 }
 
 DEXTOOL_EMOJI = {
-    "bitbucket": "🔗 BitBucket",
-    "discord": "💬 Discord",
-    "facebook": "📘 Facebook",
-    "github": "💻 Github",
-    "instagram": "📸 Instagram",
-    "linkedin": "🔗 Linkedin",
-    "medium": "📰 Medium",
-    "reddit": "🔗 Reddit",
-    "telegram": "✉️ Telegram",
-    "tiktok": "🎵 TikTok",
-    "twitter": "🐦 Twitter",
-    "website": "🌐 Website",
-    "youtube": "🎥 YouTube",
+    "bitbucket": "BitBucket",
+    "discord": "Discord",
+    "facebook": "Facebook",
+    "github": "Github",
+    "instagram": "Instagram",
+    "linkedin": "Linkedin",
+    "medium": "Medium",
+    "reddit": "Reddit",
+    "telegram": "Telegram",
+    "tiktok": "TikTok",
+    "twitter": "𝕏",
+    "website": "Website",
+    "youtube": "YouTube",
 }
 
 
@@ -34,12 +35,10 @@ class DexTool:
     async def aiohttp_get(self, url: str, dextool_key: str) -> Dict[str, Any]:
         headers = {"accept": "application/json", "X-API-Key": dextool_key}
         async with self.session.get(url, headers=headers) as response:
-            data = await response.json()
-        from pprint import pprint
-
-        print("DexTool")
-        pprint(data)
-        return data
+            data = await response.text()
+        parsed_data = json.loads(data)
+        # print(time.time() - start)
+        return parsed_data
 
     async def analyze(self, address: str, data: dict, dextool_key: str) -> dict:
         try:
@@ -47,8 +46,8 @@ class DexTool:
                 f"https://api.dextools.io/v1/token?chain={self.CHAIN}&address={address}"
             )
             response = await self.aiohttp_get(url, dextool_key)
-            data["dexscreaner"] = response
+            data["dextool"] = response['data']
             return data
         except Exception as e:
-            data['dexscreaner'] = None
+            data['dextool'] = None
             return data

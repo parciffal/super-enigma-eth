@@ -1,3 +1,4 @@
+import json
 from typing import Dict, Any
 
 import aiohttp
@@ -8,32 +9,33 @@ from app.tools.token_analitic.api_urls import coinmarketcap, geckoterminal
 
 
 class GeckoTermianl:
-    ETH_CHAIN_ID = "1"
+    ETH_CHAIN_ID = "eth"
 
     def __init__(self, session: aiohttp.ClientSession):
         self.session = session
 
-    async def aiohttp_get(self, url: str) -> Dict[str, Any]:
-        async with self.session.get(url) as response:
-            data = await response.json()
-        return data
+    async def aiohttp_get(self, url) -> dict:
+        async with self.session.get(url, ) as response:
+            data = await response.text()
+        parsed_data = json.loads(data)
+        # print(time.time() - start)
+        return parsed_data
 
-    async def analyze_full(self, address: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    async def analyze_full(self, address: str,  data: dict) -> dict:
         try:
-            url = await geckoterminal(
-                "get_full_info", data["base"]["identifier"], address
-            )
-            response: Dict[str, Any] = await self.aiohttp_get(url)
+            url = await geckoterminal("get_full_info", self.ETH_CHAIN_ID, address)
+            response = await self.aiohttp_get(url)
             if response.get("links"):
                 response = await self.aiohttp_get(response["links"]["top_pool"])
             if response.get("data"):
                 data["full"] = response["data"]
             if response.get("included"):
-                data["included"] = response["included"]
+                data['included'] = response['included']
             else:
-                data["included"] = {}
+                data['included'] = {}
             return data
-        except:
+        except Exception as e:
+            print(repr(e))
             return data
 
     async def analyze(self, address: str) -> Dict[str, Any]:

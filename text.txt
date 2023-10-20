@@ -1,8 +1,8 @@
-burned -> ?
+burned -> +
 TX -> etherscan + address
-MC - > ?
-LP -> ?
-Taxes B/S -> ?
+MC - > decscreaner
+LP -> decscreaner
+Taxes B/S -> GoPlus
 24h-vol -> dexscreener
 age -> dexscreener, 
 

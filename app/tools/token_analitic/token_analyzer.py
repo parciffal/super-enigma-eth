@@ -1,8 +1,10 @@
-import pprint
+from pprint import pprint
+from typing import Dict, Union
 from aiogram import Bot, types
 import aiohttp
 import time
 import asyncio
+from datetime import datetime, timezone
 
 from app.config import Config
 
@@ -14,14 +16,34 @@ from app.tools.token_analitic.apis import (
 from app.keyboards.inline.rug_check_keyboard import get_link_keyboard
 
 
+async def is_pair_created_within_one_hour(pair_created_at: Union[str, int, None]) -> Union[bool, None]:
+    if isinstance(pair_created_at, int):
+        pair_created_at_seconds = pair_created_at / 1000.0
+    elif isinstance(pair_created_at, str):
+        pair_created_at_datetime = datetime.fromisoformat(pair_created_at)
+        pair_created_at_datetime = pair_created_at_datetime.replace(
+            tzinfo=timezone.utc)
+        pair_created_at_seconds = pair_created_at_datetime.timestamp()
+    else:
+        return None
+    current_timestamp_seconds = datetime.now(timezone.utc).timestamp()
+    difference_seconds = current_timestamp_seconds - pair_created_at_seconds
+    print(difference_seconds)
+
+    return difference_seconds < 3600*4
+
+
 class TokenAnalyzer:
     CHAINS = {
         "ethereum": "1",
         "eth": "1",
     }
 
-    def __init__(self):
-        self.session = aiohttp.ClientSession()
+    def __init__(self, session: Union[aiohttp.ClientSession, None] = None):
+        if session:
+            self.session = session
+        else:
+            self.session = aiohttp.ClientSession()
         self.moralis = Moralis(self.session)
         self.geckotermianl = GeckoTermianl(self.session)
         self.dexscreaner = DexScreaner(self.session)
@@ -32,14 +54,9 @@ class TokenAnalyzer:
         self.dextool = DexTool(self.session)
         self.message = MessageCreater()
 
-    def __del__(self):
-        async def close_session():
-            await self.session.close()
-        asyncio.run(close_session())
-
-    async def get_button_links(self, data: dict, address: str):
+    async def get_button_links(self, address: str):
         keyboards = []
-        links = LINKS[self.CHAINS[data["base"]["platformName"].lower()]]
+        links = LINKS[self.CHAINS["eth"]]
         keys = {
             "geckoterminal": "🦎 Gecko",
             "dextools": "📈 Dex",
@@ -50,72 +67,47 @@ class TokenAnalyzer:
                 {"name": keys[key], "url": f"{links[key]}{address}"})
         return keyboards
 
-    async def get_base_data(self, address, moralis_key, eth_key) -> dict:
-        # data = await self.etherscan.analyze(address, eth_key)
-        # if data["base"] is None:
-        data = await self.moralis.analyze(address, moralis_key)
-        if data["base"] is None:
-            data = await self.dexscreaner.analyze(address)
-        if data["base"] is None:
-            data = await self.coinmarketcup.analyze(address)
-        if data["base"] is None:
-            data = await self.geckotermianl.analyze(address)
-        return data
-
     async def get_analytic_data(
         self, address: str, data: dict, quickintel_key: str
     ) -> dict:
         data = await self.gopluslab.analyze(address, data)
-        if data.get("data") is None:
+        if data.get("goplus") is None:
             data = await self.quickintel.analyze(data, address, quickintel_key)
         return data
 
-    async def send_progress_msg(self, message: types.Message, data: dict, bot: Bot):
-        chain = (
-            data["base"]["platformName"] if data["base"].get(
-                "platformName") else "N\A"
-        )
-        progress_msg = await bot.send_message(
-            message.chat.id, text=f"🔎 0xS Analyzer on <b>{chain}</b> in progress 🔍"
-        )
-        return progress_msg
-
     async def analyze(
-        self, message: types.Message, address: str, bot: Bot, config: Config
+        self, data: dict, bot: Bot, config: Config, token: str = ""
     ):
-        eth_key = config.scanapis.ethscan
-        moralis_key = config.scanapis.moralis
+        start = time.time()
         dextool_key = config.scanapis.dextool
         quick_intel_key = config.scanapis.quickintel
-
-        start = time.time()
-
-        data = await self.get_base_data(address, moralis_key, eth_key)
-        progress_msg = await self.send_progress_msg(message, data, bot)
-
-        if data.get("base") is not None:
-            # get full info from geckotermial
-
-            data = await self.geckotermianl.analyze_full(address, data)
-            # get analytic info
-
-            data = await self.get_analytic_data(address, data, quick_intel_key)
-            # get keyboard data
-
-            keyboards = await self.get_button_links(data, address)
-            # dex tool links
-
-            data = await self.dextool.analyze(address, data, dextool_key)
-
-            data = await self.dexscreaner.get_full_info(address, data)
-            # get message
-
-            msg = await self.message.create(address, data, bot)
+        if token:
+            address = token
         else:
-            msg = "📵  <b>Apologies, but the token you are inquiring about does not currently have adequate liquidity.  \nPlease try again later.</b>"
-            keyboards = []
+            address = data['token']['contractAddress']
+        data = await self.moralis.analyze(address, config.scanapis.moralis, data)
+        if data.get("moralis"):
+            check = await is_pair_created_within_one_hour(data["moralis"]['created_at'])
+            if check == False:
+                return None, None
+        data = await self.geckotermianl.analyze_full(address, data)
+        if data.get('full'):
+            check = await is_pair_created_within_one_hour(data["full"]['attributes']['pool_created_at'])
+            if check == False:
+                return None, None
+        data = await self.dexscreaner.get_full_info(address, data)
+        if data.get('dexscreener'):
+            check = await is_pair_created_within_one_hour(data["dexscreener"]['pairCreatedAt'])
+            if check == False:
+                return None, None
+        # get analytic info
+        data = await self.get_analytic_data(address, data, quick_intel_key)
+        # get keyboard data
+        keyboards = await self.get_button_links(address)
+        # dex tool links
+        data = await self.dextool.analyze(address, data, dextool_key)
+        # get message
+        pprint(data)
+        msg = await self.message.message_creater(data, bot, address)
         print("Response Time: ", time.time() - start)
-        return msg, keyboards, bot, progress_msg
-
-
-token_analyzer = TokenAnalyzer()
+        return msg, keyboards

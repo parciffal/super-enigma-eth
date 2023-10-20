@@ -14,57 +14,11 @@ class MessageCreater:
     NULLADR = "0x0000000000000000000000000000000000000000"
     CHAINS = {
         "ethereum": "1",
-        "eth": "1",
-        "shibarium": "109",
-        "Shibarium": "109",
-        "optimism": "10",
-        "cronos": "25",
-        "bsc": "56",
-        "bnb chain": "56",
-        "okc": "66",
-        "gnosis": "100",
-        "heco": "128",
-        "polygon": "137",
-        "fantom": "250",
-        "kcc": "321",
-        "zksync era": "324",
-        "zksync": "324",
-        "ethw": "10001",
-        "fon": "201022",
-        "arbitrum": "42161",
-        "avalanche": "43114",
-        "linea mainet": "59144",
-        "linea testnet": "59140",
-        "base": "8453",
-        "harmony": "1666600000",
-        "tron": "tron",
+        "eth": "1"
     }
     CHAIN_FULL_NAMES = {
         "ethereum": "Ethereum",
-        "eth": "Ethereum",
-        "shibarium": "Shibarium",
-        "Shibarium": "Shibarium",
-        "optimism": "Optimism",
-        "cronos": "Cronos",
-        "bsc": "Binance Smart Chain",
-        "bnb chain": "Binance Smart Chain",
-        "okc": "OKExChain",
-        "gnosis": "Gnosis Chain",
-        "heco": "Huobi Eco Chain",
-        "polygon": "Polygon",
-        "fantom": "Fantom",
-        "kcc": "KuCoin Community Chain",
-        "zksync era": "zkSync Era",
-        "zksync": "zkSync",
-        "ethw": "EtherLite",
-        "fon": "Ferrum Network",
-        "arbitrum": "Arbitrum",
-        "avalanche": "Avalanche",
-        "linea mainet": "Linea Mainnet",
-        "linea testnet": "Linea Testnet",
-        "base": "Basecoin",
-        "harmony": "Harmony",
-        "tron": "Tron",
+        "eth": "Ethereum"
     }
 
     DEXTOOL_CHAINS = DEXTOOL
@@ -80,22 +34,22 @@ class MessageCreater:
         pass
 
     async def get_top_holders(self, data):
-        links = LINKS[self.CHAINS[data["base"]["platformName"].lower()]]
+        links = LINKS[self.CHAINS['eth']]
         if links.get('browserScanAddress') != "":
             url = links.get('browserScanAddress')
         else:
             url = None
-        if data.get('data'):
-            if data['data'].get('holders'):
-                msg = "<b>📊 Top Holders: </b>"
-                for holder in data['data']['holders']:
+        if data.get('goplus'):
+            if data['goplus'].get('holders'):
+                msg = "⚖️Top holders: "
+                for holder in data['goplus']['holders']:
                     if url is not None:
                         percent = str(round(float(holder['percent'])*100))+"%"
                         txt = hd.link(percent, url+holder['address'])
                     else:
                         txt = str(round(float(holder['percent'])*100))+"%"
-                    if msg != "<b>📊 Top Holders: </b>":
-                        msg += f" | {txt}" 
+                    if msg != "⚖️Top holders:":
+                        msg += f" | {txt}"
                     else:
                         msg += f"{txt}"
                 return msg+"\n"
@@ -104,45 +58,26 @@ class MessageCreater:
     async def calculate_age(self, data):
         try:
             current_time = datetime.utcnow()
-            creation_time = datetime.strptime(data['full']["attributes"]["pool_created_at"],
-                                              "%Y-%m-%dT%H:%M:%S.%fZ")
-            days = (current_time - creation_time).days
-            if days:
-                return f"<b>📅 Contract Age:</b> Created {days} days ago\n"
+            creation_time = datetime.strptime(
+                data['full']["attributes"]["pool_created_at"], "%Y-%m-%dT%H:%M:%S.%fZ")
+            time_difference = current_time - creation_time
+
+            days = time_difference.days
+            hours, remainder = divmod(time_difference.seconds, 3600)
+            minutes = remainder // 60
+            if days or hours or minutes:
+                age_str = ""
+                if days:
+                    age_str += f"{days} day{'s' if days != 1 else ''} "
+                if hours:
+                    age_str += f"{hours} hour{'s' if hours != 1 else ''} "
+                if minutes:
+                    age_str += f"{minutes} minute{'s' if minutes != 1 else ''}"
+                return f"🕔 Age: <b>{age_str}</b>\n"
             else:
-                return ""
+                return "Less than a minute"
         except:
             return ""
-
-    async def get_pair(self, data, address):
-        pair = ""
-        for include in data.get('included', []):
-            if include.get('type') == 'pair':
-                links = LINKS.get(self.CHAINS.get(
-                    data['base']['platformName'].lower(), ""), {})
-                url = links.get('browserScanAddress') if links.get(
-                    'browserScan') != "" else None
-                pair = hd.link("View on Scan", url +
-                               include['attributes']['quote_address'])
-                return f"<b>🔄 Pair: </b>{pair} \n"
-
-        try:
-            address = data['dex']['quoteToken']['address']
-            links = LINKS.get(self.CHAINS.get(
-                data['base']['platformName'].lower(), ""), {})
-            url = links.get('browserScanAddress') if links.get(
-                'browserScan') != "" else None
-            pair = hd.link("View on Scan", url + address)
-        except:
-            pass
-
-        if pair == "":
-            try:
-                pair = data['full']['attributes']['name']
-            except:
-                return ""
-
-        return f"<b>🔄 Pair: </b>{pair} \n"
 
     async def get_marketcap(self, data):
         try:
@@ -150,224 +85,195 @@ class MessageCreater:
                 round(float(data["full"]["attributes"]
                       ["fully_diluted_valuation"]))
             )
-            return f"<b>📊 Market Cap:</b> {marketcup} $\n"
+            return f"💰 MC: <b>${marketcup}</b>\n"
         except:
             return ""
 
-    async def calculate_days_left(self, locked_detail):
+    async def get_buy_tax(self, data) -> str:
         try:
-            if not locked_detail:
-                return None
-            end_time_str = locked_detail[0]["end_time"]
-            end_time = datetime.strptime(
-                end_time_str, "%Y-%m-%dT%H:%M:%S+00:00")
-            current_time = datetime.utcnow()
-            days_left = (end_time - current_time).days
-            return days_left
-        except:
-            return None
-
-    async def get_lp_locked(self, data):
-        try:
-            for i in data["data"]["holders"]:
-                if i["is_locked"] == 1:
-                    try:
-                        days = await self.calculate_days_left(i["locked_detail"])
-                        if days > 0:
-                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b>on <b>{i['tag']}</b>  for <b>{days} Days</b> \n"
-                        else:
-                            return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b>on <b>{i['tag']}</b>  <b>Expired for {-1*days} Days</b> \n"
-                    except:
-                        return f"<b>🔐 LP Locked: {round(float(i['percent'])*100, 2)} % </b>on <b>{i['tag']}</b>\n"
-            return ""
-        except:
-            return ""
-
-    async def get_buy_tax(self, data):
-        try:
-            buy_tax = round(float(data['data']['buy_tax'])*100, 2)
-            msg = f"{buy_tax} %" if buy_tax else 'N\A'
-            return f"<b>💰 Buy Tax: </b>{msg}\n"
+            buy_tax = round(float(data['goplus']['buy_tax'])*100, 2)
+            return f"{buy_tax}%"
         except:
             try:
-                buy_tax = data['data']['buy_Tax']
-                if buy_tax is None:
-                    return f"<b>💰 Buy Tax: </b>N\A\n"
-                msg = f"{buy_tax} %" if buy_tax else 'N\A'
-                return f"<b>💰 Buy Tax: </b>{msg}\n"
+                buy_tax = data['quick']['buy_Tax']
+                return f"{buy_tax}%"
             except:
-                return ""
+                return f"N/A"
 
-    async def get_sell_tax(self, data):
+    async def get_sell_tax(self, data) -> str:
         try:
-            sell_tax = round(float(data['data']['sell_tax'])*100, 2)
-            msg = f"{sell_tax} %" if sell_tax else 'N\A'
-            return f"<b>💸 Sell Tax: </b>{msg}\n"
+            sell_tax = round(float(data['goplus']['sell_tax'])*100, 2)
+            return f"{sell_tax}%"
         except:
             try:
-                sell_tax = data['data']['sell_Tax']
-                msg = f"{sell_tax} %" if sell_tax else 'N\A '
-                return f"<b>💸 Sell Tax: </b>{msg}\n"
+                sell_tax = data['quick']['sell_Tax']
+                return f"{sell_tax}%"
             except:
-                return ""
+                return f"N/A"
+
+    async def get_taxes(self, data) -> str:
+        buy_tax = await self.get_buy_tax(data)
+        sell_tax = await self.get_sell_tax(data)
+        return f"💳 Taxes B/S: <b>{buy_tax} / {sell_tax}</b>\n"
 
     async def get_creator(self, data):
         try:
-            creator = data['data']['creator_address']
-            return f"<b>🧑‍🎨 Creator: </b>{hd.code(creator)}\n"
+            creator = data['goplus']['creator_address']
+            return creator
         except:
             return ""
 
     async def get_owner(self, data):
         try:
-            owner = data['data']['owner_address']
+            owner = data['goplus']['owner_address']
             return f"<b>👤 Owner: </b>{hd.code(owner)}\n"
-        except:
-            return ""
-
-    async def get_chain(self, data):
-        try:
-            chain = self.CHAIN_FULL_NAMES.get(
-                data['base']['platformName'], data['base']['platformName'])
-            return f"<b>🌐 Chain: </b>{hd.code(chain)}\n\n"
         except:
             return ""
 
     async def get_liquidity(self, data):
         try:
             liquidity = await add_commas_to_float(round(float(data["full"]["attributes"]["reserve_in_usd"]), 2))
-        except (KeyError, ValueError):
+            return f"🌊 LP:<b> ${liquidity}</b>\n"
+        except:
             try:
-                liquidity = await add_commas_to_float(round(float(data['dex']['liquidity']['usd']), 2))
-            except (KeyError, ValueError):
+                liquidity = await add_commas_to_float(round(float(data['dexscreener']['liquidity']['usd']), 2))
+                return f"🌊 LP:<b> ${liquidity}</b>\n"
+            except:
                 return ""
-        return f"<b>💰 Liquidity:</b> {liquidity} $\n"
 
     async def get_social_links(self, data):
         try:
-            msg = "\n🌐<b> Social Media </b>🌐\n\n"
-            if data.get("social_links") is None:
+            msg = "\nSocial: "
+            if data.get("dextool", None) is None:
                 return ""
             else:
-                social_links = data['social_links']
+                social_links = data['dextool']['links']
                 count = 0
                 for key, value in social_links.items():
-                    if count == 4:
-                        count = 0
-                        msg += "\n"
-                    msg += f"{hd.link(DEXTOOL_EMOJI[key], value)}  "
-                    count += 1
+                    if value != "":
+                        if count == 4:
+                            count = 0
+                            msg += "\n"
+                        if msg == "\nSocial: ":
+                            msg += f"{hd.link(DEXTOOL_EMOJI[key], value)} "
+                        else:
+                            msg += f"| {hd.link(DEXTOOL_EMOJI[key], value)} "
+                        count += 1
                 return msg+"\n"
         except:
             return ""
 
-    async def check_get_message_analytic(self, data) -> int:
+    async def check_get_message_analytic(self, data) -> str:
         count = 0
         if (
-            self.BOOL[data["data"]["is_honeypot"]]
-            if data["data"].get("is_honeypot")
+            self.BOOL[data['goplus']["is_honeypot"]]
+            if data['goplus'].get("is_honeypot")
             else None
         ):
             count += 1
         if (
-            self.BOOL[data["data"]["is_mintable"]]
-            if data["data"].get("is_mintable")
+            self.BOOL[data['goplus']["is_mintable"]]
+            if data['goplus'].get("is_mintable")
             else None
         ):
             count += 1
         if (
-            self.BOOL[data["data"]["is_proxy"]]
-            if data["data"].get("is_proxy")
+            self.BOOL[data['goplus']["is_proxy"]]
+            if data['goplus'].get("is_proxy")
             else None
         ):
             count += 1
         if (
-            self.BOOL[data["data"]["is_blacklisted"]]
-            if data["data"].get("is_blacklisted")
+            self.BOOL[data['goplus']["is_blacklisted"]]
+            if data['goplus'].get("is_blacklisted")
             else None
         ):
             count += 1
         if (
-            self.CH_BOOL[data["data"]["is_in_dex"]]
-            if data["data"].get("is_in_dex")
+            self.CH_BOOL[data['goplus']["is_in_dex"]]
+            if data['goplus'].get("is_in_dex")
             else None
         ):
             count += 1
         if (
-            self.CH_BOOL[data["data"]["is_open_source"]]
-            if data["data"].get("is_open_source")
+            self.CH_BOOL[data['goplus']["is_open_source"]]
+            if data['goplus'].get("is_open_source")
             else None
         ):
             count += 1
+        if count > 0:
+            return "✅"
+        return "❌"
 
-        return count
-
-    async def check_quick_message(self, data, liquidity) -> int:
+    async def check_quick_message(self, data, liquidity) -> str:
         count = 0
         try:
             if (
-                data["data"]["is_Honeypot"] == False
+                data['quick']["is_Honeypot"] == False
             ):
                 count += 1
         except:
             pass
         try:
             if (
-                data["data"]["is_Mintable"] == False
+                data['quick']["is_Mintable"] == False
             ):
                 count += 1
         except:
             pass
         try:
             if (
-                data["data"]["is_Proxy"] == False
+                data['quick']["is_Proxy"] == False
             ):
                 count += 1
         except:
             pass
         try:
             if (
-                data["data"]["can_Blacklist"] == False
+                data['quick']["can_Blacklist"] == False
             ):
                 count += 1
         except:
             pass
         try:
             if (
-                data["data"]["contract_Verified"]
+                data['quick']["contract_Verified"]
             ):
                 count += 1
         except:
             pass
+
         if liquidity != "":
             count += 1
 
-        return count
+        if count > 0:
+            return "✅"
+        return "❌"
 
     async def get_quick_message(self, data, liquidity):
         try:
             count = await self.check_quick_message(data, liquidity)
-            honeypot = self.QUICK_BOOL[data['data']['is_Honeypot']] if data['data'].get(
+            honeypot = self.QUICK_BOOL[data['quick']['is_Honeypot']] if data['quick'].get(
                 'is_Honeypot') is not None else f"<b>N/A</b>"
-            mintable = self.QUICK_BOOL[data['data']['is_Mintable']] if data['data'].get(
+            mintable = self.QUICK_BOOL[data['quick']['is_Mintable']] if data['quick'].get(
                 'is_Mintable') is not None else f"<b>N/A</b>"
-            proxy = self.QUICK_BOOL[data['data']['is_Proxy']] if data['data'].get(
+            proxy = self.QUICK_BOOL[data['quick']['is_Proxy']] if data['quick'].get(
                 'is_Proxy') is not None else f"<b>N/A</b>"
-            blacklisted = self.QUICK_BOOL[data['data']['can_Blacklist']] if data['data'].get(
+            blacklisted = self.QUICK_BOOL[data['quick']['can_Blacklist']] if data['quick'].get(
                 'can_Blacklist') is not None else f"<b>N/A</b>"
 
             in_dex = self.QUICK_BOOL[False] if liquidity != "" else self.QUICK_BOOL[True]
-            contract_verified = self.QUICK_REVERSE[data['data']['contract_Verified']] if data['data'].get(
+            contract_verified = self.QUICK_REVERSE[data['quick']['contract_Verified']] if data['quick'].get(
                 'contract_Verified') is not None else f"{self.QUICK_REVERSE[False]}"
 
             return (
-                f"<b>Contract Verified: {count}/6\n</b>\n\n"
-                f"<b>|-Honeypot: </b>{honeypot}\n"
-                f"<b>|-Mintable: </b>{mintable}\n"
-                f"<b>|-Proxy: </b>{proxy}\n"
-                f"<b>|-Blacklisted: </b>{blacklisted}\n"
-                f"<b>|-In Dex: </b>{in_dex}\n"
-                f"<b>|-Contract Verified: </b>{contract_verified}\n\n"
+                f"Contract Verified: {count}\n\n\n"
+                f"|-Honeypot: {honeypot}\n"
+                f"|-Mintable: {mintable}\n"
+                f"|-Proxy: {proxy}\n"
+                f"|-Blacklisted: {blacklisted}\n"
+                f"|-In Dex: {in_dex}\n"
+                f"|-Contract Verified: {contract_verified}\n\n"
             )
         except Exception as e:
             print(e)
@@ -375,171 +281,188 @@ class MessageCreater:
 
     async def get_message_analytic(self, data, liquidity):
         try:
-            if data.get('data') and data.get("data").get("is_honeypot"):
+            if data.get('goplus') and data.get("goplus").get("is_honeypot") or data.get("goplus").get("honeypot_with_same_creator"):
                 count = await self.check_get_message_analytic(data)
-                honeypot = self.MSG_BOOL[data['data']['is_honeypot']] if data['data'].get(
-                    'is_honeypot') else f"<b>N/A </b>"
-                mintable = self.MSG_BOOL[data['data']['is_mintable']] if data['data'].get(
-                    'is_mintable') else f"<b>N/A </b>"
-                proxy = self.MSG_BOOL[data['data']['is_proxy']] if data['data'].get(
-                    'is_proxy') else f"<b>N/A </b>"
-                blacklisted = self.MSG_BOOL[data['data']['is_blacklisted']] if data['data'].get(
-                    'is_blacklisted') else f"<b>N/A </b>"
-                in_dex = self.CHECK_BOOL[data['data']['is_in_dex']] if data['data'].get(
-                    'is_in_dex') else f"{self.MSG_BOOL['1']}"
-                open_source = self.CHECK_BOOL[data['data']['is_open_source']] if data['data'].get(
-                    'is_open_source') else f"{self.MSG_BOOL['1']}"
-                return (
-                    f"<b>Contract Verified: {count}/6</b>\n"
-                    f"<b>|-Honeypot: </b>{honeypot}\n"
-                    f"<b>|-Mintable: </b>{mintable}\n"
-                    f"<b>|-Proxy: </b>{proxy}\n"
-                    f"<b>|-Blacklisted: </b>{blacklisted}\n"
-                    f"<b>|-In Dex: </b>{in_dex}\n"
-                    f"<b>|-Open Source: </b>{open_source}\n\n")
+                test_msg = f"Contract Verified: {count}\n"
+                try:
+                    external_call = self.MSG_BOOL[data['goplus']['external_call']] if data['goplus'].get(
+                        "external_call") else f"<b>N/A </b>"
+                    test_msg += f"|-External calls: {external_call}\n"
+                except:
+                    pass
+                try:
+                    is_contract_renounced = self.QUICK_REVERSE[data['dextool']['audit']['is_contract_renounced']] if data['dextool'].get(
+                        "audit") else f"<b>N/A </b>"
+                    test_msg += f"|-Renounced: {is_contract_renounced}\n"
+                except:
+                    pass
+                try:
+                    unlimitedFees = self.QUICK_REVERSE[data['dextool']['audit']['unlimitedFees']] if data['dextool'].get(
+                        "audit") else f"<b>N/A </b>"
+                    test_msg += f"|-Unlimited Fees: {unlimitedFees}\n"
+                except:
+                    pass
+                try:
+                    hidden_owner = self.MSG_BOOL[data['goplus']['hidden_owner']] if data['goplus'].get(
+                        "hidden_owner") else f"<b>N/A </b>"
+                    test_msg += f"|-Hidden owner: {hidden_owner}\n"
+                except:
+                    pass
+                try:
+                    open_source = self.CHECK_BOOL[data['goplus']['is_open_source']] if data['goplus'].get(
+                        'is_open_source') else f"{self.MSG_BOOL['1']}"
+                    test_msg += f"|-Open source: {open_source}\n"
+                except:
+                    pass
+                try:
+                    mintable = self.MSG_BOOL[data['goplus']['is_mintable']] if data['goplus'].get(
+                        'is_mintable') else f"<b>N/A </b>"
+                    test_msg += f"|-Is Mintable: {mintable}\n"
+                except:
+                    pass
+                try:
+                    is_whitelisted = self.CHECK_BOOL[data['goplus']['is_whitelisted']] if data['goplus'].get(
+                        "is_whitelisted") else f"<b>N/A </b>"
+                    test_msg += f"|-Whitelisted: {is_whitelisted}\n"
+                except:
+                    pass
+                try:
+                    blacklisted = self.MSG_BOOL[data['goplus']['is_blacklisted']] if data['goplus'].get(
+                        'is_blacklisted') else f"<b>N/A </b>"
+                    test_msg += f"|-Blacklisted: {blacklisted}\n"
+                except:
+                    pass
+                try:
+                    proxy = self.MSG_BOOL[data['goplus']['is_proxy']] if data['goplus'].get(
+                        'is_proxy') else f"<b>N/A </b>"
+                    test_msg += f"|-Proxy contract: {proxy}\n"
+                except:
+                    pass
+                try:
+                    in_dex = self.CHECK_BOOL[data['goplus']['is_in_dex']] if data['goplus'].get(
+                        'is_in_dex') else f"{self.MSG_BOOL['1']}"
+                    test_msg += f"|-In Dex: {in_dex}\n"
+                except:
+                    pass
+                try:
+                    honeypot = self.MSG_BOOL[data['goplus']['is_honeypot']] if data['goplus'].get(
+                        'is_honeypot') else f"<b>N/A </b>"
+                    test_msg += f"|-Honeypot: {honeypot}\n"
+                except:
+                    pass
+                test_msg += "\n"
+                return test_msg
             else:
                 return await self.get_quick_message(data, liquidity=liquidity)
         except:
             return ""
 
-    async def get_base_liquidity(self, name, data):
+    async def get_base_liquidity(self, data):
         try:
-            return f"<b>🌊 Pooled {name}:</b> {await add_commas_to_float(data['dex']['liquidity']['base'])}\n"
-        except:
-            return ""
-
-    async def get_name(self, data):
-        try:
-            return data['full']['attributes']['name']
-        except:
-            try:
-                return data['dex']['baseToken']['name']
-            except:
-                return data['base']['baseTokenName']
-
-    async def calc_created(self, data):
-        try:
-            current_time = datetime.utcnow()
-            creation_timestamp_ms = int(data['pairCreatedAt'])
-            creation_time = datetime.utcfromtimestamp(
-                creation_timestamp_ms / 1000.0)
-            days = (current_time - creation_time).days
-            if days:
-                return f"<b>📅 Pair Created</b>: {days} Days ago\n"
-            else:
-                return ""
-        except:
-            return ""
-
-    async def get_pair_created_at(self, data, age):
-        try:
-            return await self.calc_created(data['dex'])
-        except:
-            return age
-
-    async def get_price(self, data):
-        try:
-            return f"<b>💲 Price:</b> {data['dex']['priceUsd']} $\n"
+            return f"🌊 LP:<b> ${await add_commas_to_float(data['dexsceener']['liquidity']['base'])}</b>\n"
         except:
             return ""
 
     async def get_price_change(self, data):
         try:
-            return f"<b>📉 24H Price Change:</b> {data['dex']['priceChange']['h24']}%\n"
+
+            return f"⏳ 24h-Vol:<b> ${data['dexscreener']['volume']['h24']}</b>\n"
         except:
             return ""
 
-    async def get_txns(self, data):
+    async def get_burned(self, data):
+        links = LINKS[self.CHAINS['eth']]
+        if links.get('browserScanAddress') != "":
+            url = links.get('browserScanAddress')
+        else:
+            url = None
+        if data.get('goplus'):
+            if data['goplus'].get('holders'):
+                for holder in data['goplus']['holders']:
+                    print(holder.get("address") in [
+                          "0x0000000000000000000000000000000000000000"])
+                    if holder.get("address", "").lower() in ["0x000000000000000000000000000000000000dead", "0x0000000000000000000000000000000000000000"]:
+                        print(holder)
+                        if url is not None:
+                            percent = str(
+                                round(float(holder['percent'])*100))+"%"
+                            return hd.link(percent, url+holder['address'])
+                        else:
+                            return str(round(float(holder['percent'])*100))+"%"
+        if data.get("value_eth"):
+            return f"<b>{data['value_eth']} ETH</b>"
+        return ""
+
+    async def get_price(self, data):
         try:
-            txns = f"📈 <b>24H Txns:</b>"
-            txns += f"\n       <b>|_🟢 Buy: </b>{data['dex']['txns']['h24']['buys']} "
-            txns += f"| <b>🔴 Sell: </b>{data['dex']['txns']['h24']['sells']}\n"
-            return txns
+            return float(data['dexscreener']['priceUsd'])
         except:
-            return ""
+            try:
+                return float(data['dextool']['pairs'][0]['price'])
+            except:
+                try:
+                    return float(data['full']['attributes']['price_in_usd'])
+                except:
+                    return 0
 
-    async def collect_info(self, address: str, data: dict, bot: Bot) -> dict:
+    async def get_creator_balance(self, data):
+        price = await self.get_price(data)
+        holder_balance = float(data['goplus']['creator_balance'])
+        hl = round(price*holder_balance)
+        sl = await add_commas_to_float(hl)
+        return sl
+
+    async def collect_info(self, data: dict, bot: Bot) -> dict:
         msg_data = {}
         msg_data['ads'], msg_data['media'] = await ads_manager.get_ads(bot)
-        msg_data['name'] = await self.get_name(data)
+        msg_data['name'] = data['token']['tokenName'] if data.get(
+            "token") else data['goplus']['token_name']
+        msg_data['symbol'] = data['token']['tokenSymbol'] if data.get(
+            "token") else data['goplus']['token_symbol']
         msg_data['age'] = await self.calculate_age(data)
         msg_data['top_holders'] = await self.get_top_holders(data)
-        msg_data['pair'] = await self.get_pair(data, address)
         msg_data['marketcap'] = await self.get_marketcap(data)
-        msg_data['lp_locked'] = await self.get_lp_locked(data)
-        msg_data['buy_tax'] = await self.get_buy_tax(data)
-        msg_data['sell_tax'] = await self.get_sell_tax(data)
+        msg_data['taxes'] = await self.get_taxes(data)
         msg_data['creator'] = await self.get_creator(data)
         msg_data['owner'] = await self.get_owner(data)
-        msg_data['chain'] = await self.get_chain(data)
         msg_data['liquidity'] = await self.get_liquidity(data)
         msg_data['social_links'] = await self.get_social_links(data)
         msg_data['test'] = await self.get_message_analytic(data, msg_data.get('liquidity'))
-        msg_data['liquidity_base'] = await self.get_base_liquidity(msg_data['name'], data)
-        msg_data['pair_created_at'] = await self.get_pair_created_at(data, msg_data['age'])
-        msg_data['price'] = await self.get_price(data)
+        msg_data['liquidity_base'] = await self.get_base_liquidity(data)
         msg_data['price_change'] = await self.get_price_change(data)
-        msg_data['txns'] = await self.get_txns(data)
+        msg_data['get_burned'] = await self.get_burned(data)
+        msg_data['creator_balance'] = await self.get_creator_balance(data)
         return msg_data
 
-    async def market_data_section(self, msg_data: dict) -> str:
-        keys = ['pair', 'liquidity', 'liquidity_base', 'marketcap',
-                'price', 'price_change', "txns", 'lp_locked', 'pair_created_at']
-        section = "\n"
-        passed = False
-        for key in keys:
-            if msg_data.get(key) is not None and msg_data.get(key) != "":
-                passed = True
-                section += f"{msg_data[key]}"
-        if passed:
-            section = section +"\n"
-        return section
-
-    async def create(self, address: str, data: dict, bot: Bot):
-        bot_info = await bot.get_me()
-        msg_data = await self.collect_info(address, data, bot)
-        market_data = await self.market_data_section(msg_data)
-        message = (
+    async def message_creater(self, data: dict, bot: Bot, address: str):
+        msg_data = await self.collect_info(data, bot)
+        if data.get('token'):
+            TX = hd.link(
+                'TX', f"https://etherscan.io/tx/{data['token']['hash']}")
+        else:
+            TX = ""
+        Verify = hd.link(
+            "Verify", f"https://etherscan.io/address/{msg_data['creator']}")
+        DexT = hd.link(
+            "DexT", f"https://www.dextools.io/app/en/ether/pair-explorer/{address}")
+        DexS = hd.link("DexS", f"https://dexscreener.com/ethereum/{address}")
+        Contract = hd.link("Contract", f"https://etherscan.io/token/{address}")
+        Holders = hd.link(
+            "Holders", f"https://etherscan.io/token/tokenholderchart/{address}")
+        message_template = (
             f"{msg_data['media']}"
-            f"@{bot_info.username} | "
-            f"your 🔎 0XS RESULTS 🔍 for <b>{hd.code(msg_data['name'].upper())}</b> Token!\n"
-            f"{market_data}"
-            f"<b>🏷️ Name: </b>{hd.code(msg_data['name'])}\n"
-            f"<b>➡️ Contract Address: </b>{hd.code(address)}\n\n"
+            f"{msg_data['name']} ({msg_data['symbol']}) burned <b>{msg_data['get_burned']}</b> liquidity!🔥 | {TX}\n"
+            f"{msg_data['marketcap']}"
+            f"{msg_data['liquidity']}"
+            f"{msg_data['taxes']}"
+            f"{msg_data['price_change']}"
+            f"{msg_data['age']}"
+            f"\n➡️ Contract Address: {hd.code(address)}\n\n"
             f"{msg_data['test']}"
-            f"{msg_data['creator']}"
-            f"{msg_data['top_holders']}"
-            f"{msg_data['social_links']}"
+            f"{msg_data['top_holders']}\n"
+            f"⚖️Deployer balance: <b>${msg_data['creator_balance']}</b> | {Verify}\n"
+            f"{msg_data['social_links']}\n"
+            f"{DexT} | {DexS} | {Contract} | {Holders}\n"
             f"\n{msg_data['ads']}"
         )
-        return message
-    
-    async def message_creater(self, data: dict):
-        message_template = (
-            f"{data['token']['tokenName']} ({data['token']['tokenSymbol']}) burned 100.00% liquidity!🔥 |"
-            f" TX (https://etherscan.io/tx/{data['token']['hash']})"
-            "💰 MC: $9,076.00"
-            "🌊 LP: $7,226.02"
-            "💳 Taxes B/S: 8% / 17%"
-            "⏳ 24h-Vol: $2,178.37"
-            "🕔 Age: 0 days 1 hours 10 minutes"
-            "🔫 Snipers: None"
-            "➡️ Contract Address: 0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27"
-            "Contract Verified: ✅"
-            "|- External calls: ✅"
-            "|- Renounced: ❌ Not yet. Scan again?"
-            "|- Hidden owner: No"
-            "|- Is Mintable: No"
-            "|- Blacklist function: ✅ No"
-            "|- Whitelist function: ❌ Found wl"
-            "|- Proxy contract: No"
-            "|- Honeypot: ✅ Not at this time"
-            "⚖️Top holders: 1. 1.97% | 2. 1.96% | 3. 1.88% | 4. 1.84% | 5. 1.58%"
-            "⚖️Deployer balance: 1.20 ETH |"
-            " Verify (https://etherscan.io/address/0x95a463a8c9d446afc1bb4d6c2629ba4180146ba0)"
-            "Socials:"
-            "DexT (https://www.dextools.io/app/en/ether/pair-explorer/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27) |"
-            " DexS (https://dexscreener.com/ethereum/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27) "
-            "| Contract (https://etherscan.io/token/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27) |"
-            " Holders (https://etherscan.io/token/tokenholderchart/0x2393e5870C938dd3fd9b1167b375E2Fdd2677D27)"
-        )
+        return message_template
