@@ -18,25 +18,20 @@ from app.middlewares import register_middlewares
 from app.commands import remove_bot_commands, setup_bot_commands
 from app.tools.burndetector.burn_detector import BurnDetector
 
-logging_config = DictConfigurator({
-    "version": 1,
-    "formatters": {
-        "standard": {
-            "format": "%(asctime)s - %(message)s"
-        }
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "standard",
-            "level": "INFO"
-        }
-    },
-    "root": {
-        "handlers": ["console"],
-        "level": "INFO"
+logging_config = DictConfigurator(
+    {
+        "version": 1,
+        "formatters": {"standard": {"format": "%(asctime)s - %(message)s"}},
+        "handlers": {
+            "console": {
+                "class": "logging.StreamHandler",
+                "formatter": "standard",
+                "level": "INFO",
+            }
+        },
+        "root": {"handlers": ["console"], "level": "INFO"},
     }
-})
+)
 
 
 async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
@@ -62,10 +57,8 @@ async def on_startup(dispatcher: Dispatcher, bot: Bot, config: Config):
     }
 
     logging.debug(f"Groups Mode - {states.get(bot_info.can_join_groups)}")
-    logging.debug(
-        f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
-    logging.debug(
-        f"Inline Mode - {states.get(bot_info.supports_inline_queries)}")
+    logging.debug(f"Privacy Mode - {states[not bot_info.can_read_all_group_messages]}")
+    logging.debug(f"Inline Mode - {states.get(bot_info.supports_inline_queries)}")
 
     logging.error("Bot started!")
 

@@ -7,8 +7,9 @@ from aiogram import Bot
 from pprint import pprint
 from app.config import Config
 from app.db.models import GroupModel
-from app.tools.token_analitic.token_analyzer import TokenAnalyzer, get_link_keyboard
+from app.tools.token_analitic.token_analyzer import TokenAnalyzer
 from app.tools.token_analitic.apis import DexScreaner, Moralis
+from app.keyboards.inline.rug_check_keyboard import get_link_keyboard
 
 
 def timestamp_to_date(unix_timestamp):
@@ -69,7 +70,6 @@ class BurnDetector:
     async def send_message(self, msg, kb):
         groups = await GroupModel.filter(show=True)
         for group in groups:
-            print(group.telegram_id)
             await self.bot.send_message(
                 text=msg,
                 chat_id=group.telegram_id,
@@ -80,8 +80,10 @@ class BurnDetector:
         try:
             dt = await self.dex.analyze(contract_address)
             if dt:
-                return is_pair_created_within_one_hour(dt['pairCreatedAt'])
-            dt = await self.moralis.get_token(contract_address, self.config.scanapis.moralis)
+                return is_pair_created_within_one_hour(dt["pairCreatedAt"])
+            dt = await self.moralis.get_token(
+                contract_address, self.config.scanapis.moralis
+            )
             if dt:
                 pprint(dt)
         except Exception as e:
@@ -98,13 +100,14 @@ class BurnDetector:
                 if data["status"] == "1":
                     transactions = data["result"]
                     for tx in transactions:
+                        print(tx["contractAddress"])
                         try:
                             if (
                                 tx["tokenSymbol"] not in ["", "UNI-V2"]
                                 and int(tx["timeStamp"]) > self.last_tr_time
                             ):
                                 # check = await self.bot_age(tx['contractAddress'])
-                                print(tx['contractAddress'])
+
                                 self.last_tr_time = int(tx["timeStamp"])
                                 value_wei = int(tx["value"])
                                 value_eth = value_wei / 10**18
@@ -113,11 +116,12 @@ class BurnDetector:
                                     "token": tx,
                                     "value_eth": value_eth,
                                 }
-                                msg, kb = await self.token_analyzer.analyze(data, self.bot, self.config)
+                                msg, kb = await self.token_analyzer.analyze(
+                                    data, self.bot, self.config
+                                )
                                 if msg and kb:
                                     keyb = await get_link_keyboard(kb)
-                                    asyncio.create_task(
-                                        self.send_message(msg, keyb))
+                                    asyncio.create_task(self.send_message(msg, keyb))
                                 else:
                                     self.last_tr_time = 0
                             await asyncio.sleep(1)
@@ -127,8 +131,9 @@ class BurnDetector:
                     print("API request failed:", data.get("message", "None"))
 
                 # Sleep for 5 minutes (300 seconds) before checking again
-                await asyncio.sleep(300)
-
+                await asyncio.sleep(10)
+        except Exception as e:
+            logging.error(f"Burn: {repr(e)}")
         finally:
             if self.session:
                 await self.session.close()

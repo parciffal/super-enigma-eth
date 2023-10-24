@@ -8,7 +8,7 @@ services:
     volumes:
       - .:/src
     ports:
-      - 8005:8005
+      - 8006:8000
     depends_on:
       - db
     env_file:
@@ -18,7 +18,7 @@ services:
     image: postgres:13
     restart: always
     ports:
-      - "15432:5432"
+      - "25432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data/ 
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql
