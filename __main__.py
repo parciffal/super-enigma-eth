@@ -6,7 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.client.session.aiohttp import AiohttpSession
 from aiogram.client.telegram import TelegramAPIServer
 from aiogram.fsm.storage.memory import MemoryStorage
-from logging.config import DictConfigurator
+
 from pyrogram.client import Client
 
 from app import db
@@ -17,7 +17,7 @@ from app.handlers import get_handlers_router
 from app.middlewares import register_middlewares
 from app.commands import remove_bot_commands, setup_bot_commands
 from app.tools.burndetector.burn_detector import BurnDetector
-
+from logging.config import DictConfigurator
 logging_config = DictConfigurator(
     {
         "version": 1,
